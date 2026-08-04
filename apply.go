@@ -23,8 +23,11 @@ type project struct {
 }
 
 // setup writes the open-source scaffolding into dir (which must exist and be
-// a git repo, or be an empty dir). It is idempotent: files it manages are
-// overwritten with the canonical version.
+// a git repo, or be an empty dir). It is idempotent: the CI/release
+// workflows are always overwritten with the canonical version; everything
+// else (issue/PR templates, CONTRIBUTING, CHANGELOG, LICENSE) is only
+// created when missing, so a re-run never clobbers a project's existing
+// custom prose, language or history.
 func setup(dir string, p project) error {
 	if p.Name == "" {
 		return fmt.Errorf("nome vazio")
@@ -45,24 +48,29 @@ func setup(dir string, p project) error {
 	}
 
 	files := map[string]string{
-		filepath.Join(workflows, "ci.yml"):   ciYAML,
-		filepath.Join(issues, "bug_report.yml"):   render(bugReportYAML, p),
-		filepath.Join(issues, "feature_request.yml"): render(featureRequestYAML, p),
-		filepath.Join(issues, "config.yml"):  issueConfigYAML,
-		filepath.Join(dir, ".github", "PULL_REQUEST_TEMPLATE.md"): prTemplateMD,
-		filepath.Join(dir, "CONTRIBUTING.md"): render(contributingMD, p),
+		filepath.Join(workflows, "ci.yml"): ciYAML,
 	}
 	if !p.Lib {
 		files[filepath.Join(workflows, "release.yml")] = render(releaseYAML, p)
 	}
 
-	// CHANGELOG and LICENSE are only created when missing, so an existing
-	// project's history isn't clobbered.
-	if _, err := os.Stat(filepath.Join(dir, "CHANGELOG.md")); os.IsNotExist(err) {
-		files[filepath.Join(dir, "CHANGELOG.md")] = changelogMD
+	// The remaining scaffold files are only created when missing, so an
+	// existing project's custom prose (language, specifics) and history
+	// aren't clobbered by a re-run. New projects get the canonical (PT-BR)
+	// versions.
+	createIfMissing := map[string]string{
+		filepath.Join(issues, "bug_report.yml"):     render(bugReportYAML, p),
+		filepath.Join(issues, "feature_request.yml"): render(featureRequestYAML, p),
+		filepath.Join(issues, "config.yml"):          issueConfigYAML,
+		filepath.Join(dir, ".github", "PULL_REQUEST_TEMPLATE.md"): prTemplateMD,
+		filepath.Join(dir, "CONTRIBUTING.md"):                      render(contributingMD, p),
+		filepath.Join(dir, "CHANGELOG.md"):                         changelogMD,
+		filepath.Join(dir, "LICENSE"):                              agplLicense,
 	}
-	if _, err := os.Stat(filepath.Join(dir, "LICENSE")); os.IsNotExist(err) {
-		files[filepath.Join(dir, "LICENSE")] = agplLicense
+	for path, content := range createIfMissing {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			files[path] = content
+		}
 	}
 
 	for path, content := range files {

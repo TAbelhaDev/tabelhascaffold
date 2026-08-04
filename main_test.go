@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"text/template"
@@ -89,5 +91,50 @@ func TestRenderReleaseWorkflow(t *testing.T) {
 	}
 	if strings.Contains(out, "{{.Name}}") {
 		t.Fatalf("unrendered template var:\n%s", out)
+	}
+}
+
+func TestSetupPreservesExistingFiles(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".github", "workflows"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	custom := "# Custom CONTRIBUTING in English\n"
+	customTpl := "name: Bug report\nEnglish template\n"
+	englishChangelog := "# Changelog\ncustom\n"
+	if err := os.WriteFile(filepath.Join(dir, "CONTRIBUTING.md"), []byte(custom), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, ".github", "ISSUE_TEMPLATE"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".github", "ISSUE_TEMPLATE", "bug_report.yml"), []byte(customTpl), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "CHANGELOG.md"), []byte(englishChangelog), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := setup(dir, project{Name: "myapp", Org: "TabelaDev"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Custom prose must survive a re-run.
+	if got, _ := os.ReadFile(filepath.Join(dir, "CONTRIBUTING.md")); string(got) != custom {
+		t.Fatalf("CONTRIBUTING clobbered:\n%s", got)
+	}
+	if got, _ := os.ReadFile(filepath.Join(dir, ".github", "ISSUE_TEMPLATE", "bug_report.yml")); string(got) != customTpl {
+		t.Fatalf("bug_report template clobbered:\n%s", got)
+	}
+	if got, _ := os.ReadFile(filepath.Join(dir, "CHANGELOG.md")); string(got) != englishChangelog {
+		t.Fatalf("CHANGELOG clobbered:\n%s", got)
+	}
+	// But CI is always canonical.
+	ci, err := os.ReadFile(filepath.Join(dir, ".github", "workflows", "ci.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(ci), "actions/checkout@v7") {
+		t.Fatalf("CI not canonical:\n%s", ci)
 	}
 }

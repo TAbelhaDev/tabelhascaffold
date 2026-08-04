@@ -47,14 +47,13 @@ func updateREADMEBadges(readme, block string) string {
 
 	if first == -1 {
 		// No badges yet: insert after the first heading so they sit right
-		// under the title.
-		blockLines := strings.Split(block, "\n")
+		// under the title, with a blank line above the block.
+		blockLines := append([]string{""}, strings.Split(block, "\n")...)
 		for j, line := range lines {
 			if strings.HasPrefix(line, "# ") {
 				rest := append([]string{}, lines[j+1:]...)
-				// Drop leading blank lines so the block's own trailing blank
-				// is the single separator — matches the replace path, keeping
-				// the transform idempotent.
+				// Drop leading blank lines so the block's separators are the
+				// only ones.
 				for len(rest) > 0 && strings.TrimSpace(rest[0]) == "" {
 					rest = rest[1:]
 				}
@@ -65,13 +64,9 @@ func updateREADMEBadges(readme, block string) string {
 		return strings.Join(lines, "\n")
 	}
 
-	for first > 0 && strings.TrimSpace(lines[first-1]) == "" {
-		first--
-	}
-	for last < len(lines)-1 && strings.TrimSpace(lines[last+1]) == "" {
-		last++
-	}
-
+	// Replace exactly the badge lines: blanks before and after the region are
+	// left alone, so the block keeps the title separator above and the body
+	// separator below.
 	out := append([]string{}, lines[:first]...)
 	out = append(out, block)
 	out = append(out, lines[last+1:]...)

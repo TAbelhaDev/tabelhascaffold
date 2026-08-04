@@ -65,11 +65,22 @@ binários e publica o GitHub release (com detecção de prerelease `-beta.N`).
 ## Como funciona
 
 - **Templates embutidos** com `go:embed` — o binário é autocontido.
-- **Idempotente** — rodar de novo sobrescreve o que o scaffold gerencia e
-  preserva `CHANGELOG.md`/`LICENSE`/histórico existentes.
+- **Idempotente** — workflows são sempre sobrescritos com a versão canônica;
+  issue/PR templates, `CONTRIBUTING.md`, `CHANGELOG.md` e `LICENSE` são
+  criados apenas quando não existem, então um projeto com templates
+  customizados (ex. em inglês) ou histórico não é sobrescrito.
 - **Badges no lugar certo** — o bloco de badges (Go Version, License, Bubble
   Tea, tabelatuiui) fica na primeira linha e o ko-fi na linha de baixo,
   sempre.
+
+## Quem usa
+
+| Projeto | Lib? | De onde veio |
+|---|---|---|
+| [djobs](https://github.com/ianptkcs/djobs) | app | já canônico (fonte do padrão) |
+| [tabelaradar](https://github.com/TabelaDev/tabelaradar) | app | unificado |
+| [tabelakanban](https://github.com/TabelaDev/tabelakanban) | app | unificado |
+| [tabelatuiui](https://github.com/TabelaDev/tabelatuiui) | lib | unificado |
 
 O chrome das TUIs em si (tema, panels, helpers de IPC) vem da
 [`tabelatuiui`](https://github.com/TabelaDev/tabelatuiui).
