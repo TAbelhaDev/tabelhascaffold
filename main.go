@@ -54,26 +54,11 @@ func runSetup(args []string) int {
 	fs.StringVar(&title, "title", "", "")
 	fs.StringVar(&org, "org", "", "")
 
-	// flag stops at the first positional arg, so split args into flags (which
-	// may carry a value) and the one positional dir. Flags with a value
-	// consume their following arg, so those pairs must be preserved as-is.
-	dir := "."
-	seenDir := false
-	valueFlags := map[string]bool{"-name": true, "-title": true, "-org": true, "--name": true, "--title": true, "--org": true}
-	var rest []string
-	for i := 0; i < len(args); i++ {
-		a := args[i]
-		if !strings.HasPrefix(a, "-") && !seenDir {
-			dir = a
-			seenDir = true
-			continue
-		}
-		rest = append(rest, a)
-		if valueFlags[a] && i+1 < len(args) {
-			i++
-			rest = append(rest, args[i])
-		}
-	}
+	dir, rest := splitArgs(args, map[string]bool{
+		"-name": true, "--name": true,
+		"-title": true, "--title": true,
+		"-org": true, "--org": true,
+	})
 	fs.Parse(rest)
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
@@ -105,12 +90,12 @@ func runSetup(args []string) int {
 func runRelease(args []string) int {
 	fs := flag.NewFlagSet("release", flag.ExitOnError)
 	version := fs.String("version", "", "")
-	fs.Parse(args)
+	dir, rest := splitArgs(args, map[string]bool{"-version": true, "--version": true})
+	fs.Parse(rest)
 	if *version == "" {
 		fmt.Fprintln(os.Stderr, "tabelascaffold: --version é obrigatório (ex: --version v0.2.0)")
 		return 1
 	}
-	dir := "."
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
 	}
@@ -125,4 +110,28 @@ func runRelease(args []string) int {
 	}
 	fmt.Printf("tabelascaffold: tag %s criada e empurrada\n", *version)
 	return 0
+}
+
+// splitArgs separates the one positional dir from the flag args. Go's flag
+// package stops parsing at the first non-flag argument, so a trailing
+// "--version" (or any flag) after the dir would be silently ignored; this
+// pulls the dir out first and preserves flag/value pairs no matter where the
+// dir appears.
+func splitArgs(args []string, valueFlags map[string]bool) (dir string, rest []string) {
+	dir = "."
+	seenDir := false
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if !strings.HasPrefix(a, "-") && !seenDir {
+			dir = a
+			seenDir = true
+			continue
+		}
+		rest = append(rest, a)
+		if valueFlags[a] && i+1 < len(args) {
+			i++
+			rest = append(rest, args[i])
+		}
+	}
+	return dir, rest
 }

@@ -9,6 +9,26 @@ import (
 	"text/template"
 )
 
+func TestSplitArgs(t *testing.T) {
+	// release style: dir first, then --version — the case that used to break.
+	dir, rest := splitArgs([]string{".", "--version", "v0.2.0"}, map[string]bool{"--version": true})
+	if dir != "." || len(rest) != 2 || rest[0] != "--version" || rest[1] != "v0.2.0" {
+		t.Fatalf("splitArgs(dir-first) = dir=%q rest=%v", dir, rest)
+	}
+
+	// flag first, then dir
+	dir, rest = splitArgs([]string{"--version", "v0.2.0", "."}, map[string]bool{"--version": true})
+	if dir != "." || len(rest) != 2 {
+		t.Fatalf("splitArgs(flag-first) = dir=%q rest=%v", dir, rest)
+	}
+
+	// no dir at all → defaults to "."
+	dir, rest = splitArgs([]string{"--version", "v0.1.0"}, map[string]bool{"--version": true})
+	if dir != "." {
+		t.Fatalf("splitArgs(no dir) dir=%q, want .", dir)
+	}
+}
+
 func TestHumanizeTitle(t *testing.T) {
 	cases := map[string]string{
 		"tabelakanban": "Tabelakanban",
