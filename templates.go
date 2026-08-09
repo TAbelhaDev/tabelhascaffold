@@ -13,6 +13,12 @@ var ciYAML string
 //go:embed templates/release.yml
 var releaseYAML string
 
+//go:embed templates/ci-web.yml
+var ciWebYAML string
+
+//go:embed templates/release-web.yml
+var releaseWebYAML string
+
 //go:embed templates/bug_report.yml
 var bugReportYAML string
 

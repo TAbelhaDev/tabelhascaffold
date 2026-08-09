@@ -41,6 +41,8 @@ setup flags:
   --title X    título humano pro CONTRIBUTING (padrão: derivado de --name)
   --org X      org/owner do repo (padrão: TabelaDev)
   --lib        projeto biblioteca (sem workflow de release de binário)
+  --stack X    stack do projeto: tui (Go/Bubble Tea, padrão) ou web
+               (SvelteKit/Cloudflare; CI Bun + release sem binário)
 
 release flags:
   --version X  versão da tag (padrão: precisa ser informada)`)
@@ -48,20 +50,27 @@ release flags:
 
 func runSetup(args []string) int {
 	fs := flag.NewFlagSet("setup", flag.ExitOnError)
-	var name, title, org string
+	var name, title, org, stack string
 	lib := fs.Bool("lib", false, "")
 	fs.StringVar(&name, "name", "", "")
 	fs.StringVar(&title, "title", "", "")
 	fs.StringVar(&org, "org", "", "")
+	fs.StringVar(&stack, "stack", "tui", "")
 
 	dir, rest := splitArgs(args, map[string]bool{
 		"-name": true, "--name": true,
 		"-title": true, "--title": true,
 		"-org": true, "--org": true,
+		"-stack": true, "--stack": true,
 	})
 	fs.Parse(rest)
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
+	}
+
+	if stack != "tui" && stack != "web" {
+		fmt.Fprintf(os.Stderr, "erro: stack desconhecido %q (esperado tui ou web)\n", stack)
+		return 1
 	}
 
 	abs, err := filepath.Abs(dir)
@@ -72,7 +81,7 @@ func runSetup(args []string) int {
 	if name == "" {
 		name = filepath.Base(abs)
 	}
-	p := project{Name: name, Title: title, Org: org, Lib: *lib}
+	p := project{Name: name, Title: title, Org: org, Lib: *lib, Stack: stack}
 
 	if err := setup(abs, p); err != nil {
 		fmt.Fprintln(os.Stderr, "erro:", err)
@@ -82,7 +91,7 @@ func runSetup(args []string) int {
 		fmt.Fprintln(os.Stderr, "aviso (README):", err)
 	}
 	fmt.Printf("tabelascaffold: estrutura open-source aplicada em %s\n", abs)
-	fmt.Printf("  nome=%s org=%s lib=%v\n", p.Name, p.Org, p.Lib)
+	fmt.Printf("  nome=%s org=%s lib=%v stack=%s\n", p.Name, p.Org, p.Lib, p.Stack)
 	fmt.Println("  agora: tabelascaffold release . --version v0.1.0")
 	return 0
 }

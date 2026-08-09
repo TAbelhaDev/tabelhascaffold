@@ -7,80 +7,194 @@ import (
 	"strings"
 )
 
-// badgeBlock builds the README badge block: Go version + license + bubble
-// tea (plus the tabelatuiui badge for non-lib projects) on one line, and the
-// ko-fi button on its own line below them — the "support" CTA always sits
-// under the tech tags.
-func badgeBlock(p project) string {
-	goBadge := "[![Go Version](https://img.shields.io/github/go-mod/go-version/" + p.Org + "/" + p.Name + "?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)"
-	license := "[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)"
-	bubble := "[![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)"
-	kofi := "[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)"
+var (
+	badgeLine = regexp.MustCompile(`(img\.shields\.io|ko-fi\.com/img)`)
+	divider   = regexp.MustCompile(`^\s*-{3,}\s*$`)
+	divOpen   = regexp.MustCompile(`^\s*<div`)
+	divClose  = regexp.MustCompile(`^\s*<\/div`)
+)
 
-	var tech []string
-	tech = append(tech, goBadge, license, bubble)
-	if !p.Lib {
-		tech = append(tech, "[![Powered by tabelatuiui](https://img.shields.io/badge/theme-tabelatuiui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelatuiui)")
+// techBadges returns the badge lines proper for the project stack — license
+// + tech tags for the header; ko-fi is handled separately by headerBlock.
+func techBadges(p project) []string {
+	switch {
+	case p.web():
+		b := []string{
+			"[![SvelteKit](https://img.shields.io/badge/SvelteKit-Svelte-ff3e00?style=flat-square&logo=svelte&logoColor=white)](https://kit.svelte.dev)",
+			"[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange?style=flat-square&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)",
+			"[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)",
+		}
+		if !p.Lib {
+			b = append(b, "[![Built with tabelawebui](https://img.shields.io/badge/theme-tabelawebui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelawebui)")
+		}
+		return b
+	default:
+		b := []string{
+			"[![Go Version](https://img.shields.io/github/go-mod/go-version/" + p.Org + "/" + p.Name + "?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)",
+			"[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)",
+			"[![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)",
+		}
+		if !p.Lib {
+			b = append(b, "[![Powered by tabelatuiui](https://img.shields.io/badge/theme-tabelatuiui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelatuiui)")
+		}
+		return b
 	}
-	return strings.Join(tech, "\n") + "\n\n" + kofi
 }
 
-// updateREADMEBadges injects the badge block into the README, replacing any
-// existing badge region. Returns the new content.
-func updateREADMEBadges(readme, block string) string {
-	badgeLine := regexp.MustCompile(`(img\.shields\.io|ko-fi\.com/img)`)
+const kofi = "[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)"
 
+// headerBlock builds the canonical README header — a centered <div> holding
+// the project title, its tagline, the tech badges, and the ko-fi button
+// separated on its own line, then the --- divider that closes the header.
+func headerBlock(title, tagline string, p project) string {
+	var b strings.Builder
+	b.WriteString(`<div align="center">`)
+	b.WriteString("\n\n# " + title + "\n")
+	if strings.TrimSpace(tagline) != "" {
+		b.WriteString("\n" + tagline + "\n")
+	}
+	b.WriteString("\n" + strings.Join(techBadges(p), "\n"))
+	b.WriteString("\n\n" + kofi)
+	b.WriteString("\n\n</div>")
+	return b.String()
+}
+
+// updateHeader rewrites the README top block to the canonical model,
+// idempotently. It finds the header region — the title through the last
+// badge/ko-fi line, extended to a closing </div> when one sits after it —
+// and rebuilds it as <div align="center"> + preserved title + preserved
+// tagline + canonical badges + ko-fi on its own line + a --- divider before
+// the untouched body.
+//
+// Projects that already follow the model render back to byte-identical
+// output on a re-run. Older bare headers (title, badges, no wrapper) get the
+// <div align="center"> wrapper introduced.
+func updateHeader(readme string, p project) string {
 	lines := strings.Split(readme, "\n")
 
-	// Find the badge region: the minimal span covering every badge line,
-	// widened to include adjacent blank lines so the block replaces the
-	// whole gap (badges + trailing blank) rather than leaving doubles.
-	first, last := -1, -1
-	for i, line := range lines {
-		if badgeLine.MatchString(line) {
-			if first == -1 {
-				first = i
-			}
-			last = i
+	titleIdx := -1
+	for i, l := range lines {
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		if strings.HasPrefix(strings.TrimSpace(l), "# ") {
+			titleIdx = i
+			break
 		}
 	}
 
-	if first == -1 {
-		// No badges yet: insert after the first heading so they sit right
-		// under the title, with a blank line above the block.
-		blockLines := append([]string{""}, strings.Split(block, "\n")...)
-		for j, line := range lines {
-			if strings.HasPrefix(line, "# ") {
-				rest := append([]string{}, lines[j+1:]...)
-				// Drop leading blank lines so the block's separators are the
-				// only ones.
-				for len(rest) > 0 && strings.TrimSpace(rest[0]) == "" {
-					rest = rest[1:]
+	firstBadge, lastBadge := -1, -1
+	for i, l := range lines {
+		if badgeLine.MatchString(l) {
+			if firstBadge < 0 {
+				firstBadge = i
+			}
+			lastBadge = i
+		}
+	}
+
+	// The tagline is whatever prose sits between the title and the first
+	// badge — kept verbatim so custom copy survives a re-run.
+	tagline := ""
+	if titleIdx >= 0 && firstBadge > titleIdx+1 {
+		var prose []string
+		for _, l := range lines[titleIdx+1 : firstBadge] {
+			t := strings.TrimSpace(l)
+			if t == "" {
+				if len(prose) > 0 {
+					prose = append(prose, "")
 				}
-				lines = append(lines[:j+1], append(blockLines, rest...)...)
-				break
+				continue
 			}
+			if badgeLine.MatchString(l) || divClose.MatchString(l) || divOpen.MatchString(l) {
+				continue
+			}
+			prose = append(prose, l)
 		}
-		return strings.Join(lines, "\n")
+		tagline = strings.Trim(strings.Join(prose, "\n"), "\n")
 	}
 
-	// Replace exactly the badge lines: blanks before and after the region are
-	// left alone, so the block keeps the title separator above and the body
-	// separator below.
-	out := append([]string{}, lines[:first]...)
-	out = append(out, block)
-	out = append(out, lines[last+1:]...)
+	// Determine the replaced span: title (or earliest badge) through the last
+	// badge line, widened to an existing </div> right after the badges.
+	var out []string
+	title := ""
+	if titleIdx >= 0 {
+		title = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(lines[titleIdx]), "# "))
+	}
+	if title == "" {
+		title = p.Title
+		if title == "" {
+			title = humanizeTitle(p.Name)
+		}
+	}
+	block := strings.Split(headerBlock(title, tagline, p), "\n")
+
+	if lastBadge < 0 {
+		// No badges yet: insert the model right after the title, keeping the
+		// rest of the file as the body.
+		if titleIdx < 0 {
+			return readme
+		}
+		out = append(out, lines[:titleIdx+1]...)
+		out = append(out, block...)
+		body := lines[titleIdx+1:]
+		for len(body) > 0 && strings.TrimSpace(body[0]) == "" {
+			body = body[1:]
+		}
+		if len(body) > 0 {
+			out = append(out, "", "---", "")
+			out = append(out, body...)
+		}
+		return strings.Join(out, "\n")
+	}
+
+	start := firstBadge
+	if titleIdx >= 0 && titleIdx < firstBadge {
+		start = titleIdx
+	}
+	for i := start - 1; i >= 0; i-- {
+		if divOpen.MatchString(lines[i]) {
+			start = i
+			break
+		}
+	}
+	end := lastBadge
+	for i := lastBadge + 1; i < len(lines); i++ {
+		if divClose.MatchString(lines[i]) {
+			end = i
+			break
+		}
+		if divider.MatchString(lines[i]) {
+			break
+		}
+	}
+	rest := lines[end+1:]
+	for len(rest) > 0 && strings.TrimSpace(rest[0]) == "" {
+		rest = rest[1:]
+	}
+	if len(rest) > 0 && divider.MatchString(rest[0]) {
+		rest = rest[1:]
+	}
+	for len(rest) > 0 && strings.TrimSpace(rest[0]) == "" {
+		rest = rest[1:]
+	}
+
+	out = append(out, block...)
+	if len(rest) > 0 {
+		out = append(out, "", "---", "")
+		out = append(out, rest...)
+	}
 	return strings.Join(out, "\n")
 }
 
-// applyBadges updates the README of dir in place.
+// applyBadges normalizes the README header of dir in place.
 func applyBadges(dir string, p project) error {
 	path := filepath.Join(dir, "README.md")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	updated := updateREADMEBadges(string(data), badgeBlock(p))
+	updated := updateHeader(string(data), p)
 	if updated == string(data) {
 		return nil
 	}

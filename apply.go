@@ -20,7 +20,13 @@ type project struct {
 	Org string
 	// Lib marks a library project: no binary release workflow.
 	Lib bool
+	// Stack is the project stack: "" or "tui" for Go TUIs, "web" for
+	// SvelteKit/Cloudflare sites.
+	Stack string
 }
+
+// web reports whether the project uses the web scaffolding.
+func (p project) web() bool { return p.Stack == "web" }
 
 // setup writes the open-source scaffolding into dir (which must exist and be
 // a git repo, or be an empty dir). It is idempotent: the CI/release
@@ -50,8 +56,15 @@ func setup(dir string, p project) error {
 	files := map[string]string{
 		filepath.Join(workflows, "ci.yml"): ciYAML,
 	}
+	if p.web() {
+		files[filepath.Join(workflows, "ci.yml")] = ciWebYAML
+	}
 	if !p.Lib {
-		files[filepath.Join(workflows, "release.yml")] = render(releaseYAML, p)
+		releaseTmpl := releaseYAML
+		if p.web() {
+			releaseTmpl = releaseWebYAML
+		}
+		files[filepath.Join(workflows, "release.yml")] = render(releaseTmpl, p)
 	}
 
 	// The remaining scaffold files are only created when missing, so an

@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check for app skeleton
+        id: skeleton
+        run: |
+          if [ -f package.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Bun
+        if: steps.skeleton.outputs.exists == 'true'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        if: steps.skeleton.outputs.exists == 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        if: steps.skeleton.outputs.exists == 'true'
+        run: bun run lint
+
+      - name: Check
+        if: steps.skeleton.outputs.exists == 'true'
+        run: bun run check
+
+      - name: Test
+        if: steps.skeleton.outputs.exists == 'true'
+        run: bun run test
+
+      - name: Build
+        if: steps.skeleton.outputs.exists == 'true'
+        run: bun run build
