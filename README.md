@@ -77,13 +77,38 @@ binários e publica o GitHub release (com detecção de prerelease `-beta.N`).
 
 | Projeto | Lib? | De onde veio |
 |---|---|---|
-| [djobs](https://github.com/ianptkcs/djobs) | app | já canônico (fonte do padrão) |
+| [djobs](https://github.com/ianptkcs/dankjobs) | app | já canônico (fonte do padrão) |
 | [tabelaradar](https://github.com/TabelaDev/tabelaradar) | app | unificado |
 | [tabelakanban](https://github.com/TabelaDev/tabelakanban) | app | unificado |
 | [tabelatuiui](https://github.com/TabelaDev/tabelatuiui) | lib | unificado |
 
 O chrome das TUIs em si (tema, panels, helpers de IPC) vem da
 [`tabelatuiui`](https://github.com/TabelaDev/tabelatuiui).
+
+## Desenvolvimento
+
+```bash
+go test ./...
+```
+
+## Changelog
+
+Veja [CHANGELOG.md](CHANGELOG.md) para o histórico de versões.
+
+## Apoie o projeto
+
+- **Global**: [ko-fi.com/ianptkcs](https://ko-fi.com/ianptkcs)
+- **Brasil (Pix)**: escaneie o QR abaixo ou copie o código
+
+  <img src="pix-qr.png" alt="Pix QR" width="200" />
+
+  <details><summary>Código Pix (copiar)</summary>
+
+  ```
+  00020126580014BR.GOV.BCB.PIX01365ad933b0-dcdc-4525-a736-0759902aeec65204000053039865802BR5925Ian Patrick da Costa Soar6009SAO PAULO62140510tQA85x6Dov63041FB6
+  ```
+
+  </details>
 
 ## Licença
 
