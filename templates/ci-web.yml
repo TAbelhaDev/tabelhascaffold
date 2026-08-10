@@ -37,8 +37,18 @@ jobs:
         if: steps.skeleton.outputs.exists == 'true'
         run: bun run check
 
-      - name: Test
+      - name: Check for test script
+        id: testscript
         if: steps.skeleton.outputs.exists == 'true'
+        run: |
+          if jq -e '.scripts.test' package.json > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test
+        if: steps.testscript.outputs.exists == 'true'
         run: bun run test
 
       - name: Build
