@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] — 2026-08-10
+
+### Fixed
+
+- `setup` num README sem badges duplicava o título: o bloco canônico já carrega
+  o título, mas a linha original era mantida acima dele. O `doctor` acusava
+  divergência num repo que o `setup` tinha acabado de escrever — foi assim que
+  apareceu. Coberto por um teste de idempotência que roda quatro formatos de
+  README (título puro, título + corpo, banner pronto, com preâmbulo).
+
 ## [0.4.0] — 2026-08-10
 
 ### Added

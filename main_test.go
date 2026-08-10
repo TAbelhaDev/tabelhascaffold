@@ -47,8 +47,13 @@ func TestHumanizeTitle(t *testing.T) {
 func TestUpdateHeaderInsert(t *testing.T) {
 	readme := "# My Tool\n\nSome description.\n"
 	got := updateHeader(readme, project{Name: "my-tool", Org: "TabelaDev"})
-	if !strings.HasPrefix(got, "# My Tool\n") {
-		t.Fatalf("heading moved:\n%s", got)
+	if !strings.HasPrefix(got, "<div align=\"center\">\n") {
+		t.Fatalf("header block should open the file:\n%s", got)
+	}
+	// The canonical block carries the title, so the original heading must be
+	// replaced rather than kept above it — otherwise the README shows it twice.
+	if n := strings.Count(got, "# My Tool"); n != 1 {
+		t.Fatalf("title appears %d times, want 1:\n%s", n, got)
 	}
 	if !strings.Contains(got, "<div align=\"center\">") {
 		t.Fatalf("missing centered div:\n%s", got)
@@ -360,5 +365,28 @@ func TestSetupPreservesExistingFiles(t *testing.T) {
 	}
 	if !strings.Contains(string(ci), "actions/checkout@v7") {
 		t.Fatalf("CI not canonical:\n%s", ci)
+	}
+}
+
+// A README the tool just normalized must render back byte-identical, whatever
+// shape it started from. Without this, `doctor` reports drift on a repo `setup`
+// had only just written.
+func TestUpdateHeaderIdempotentFromAnyShape(t *testing.T) {
+	p := project{Name: "meuapp", Org: "TabelaDev"}
+	shapes := map[string]string{
+		"bare title":     "# meuapp\n\nDescrição do projeto.\n",
+		"title + body":   "# meuapp\n\nUma linha.\n\n## Uso\n\nfaz assim\n",
+		"already banner": "<div align=\"center\">\n\n# meuapp\n\ntagline\n\n[![License](https://img.shields.io/badge/x)](LICENSE)\n\n</div>\n\n---\n\ncorpo\n",
+		"with preamble":  "<!-- nota -->\n\n# meuapp\n\nDescrição.\n",
+	}
+	for name, src := range shapes {
+		once := updateHeader(src, p)
+		twice := updateHeader(once, p)
+		if once != twice {
+			t.Errorf("%s: not idempotent\n--- first ---\n%s\n--- second ---\n%s", name, once, twice)
+		}
+		if n := strings.Count(once, "# meuapp"); n != 1 {
+			t.Errorf("%s: title appears %d times, want 1:\n%s", name, n, once)
+		}
 	}
 }

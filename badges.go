@@ -136,12 +136,14 @@ func updateHeader(readme string, p project) string {
 	block := strings.Split(headerBlock(title, tagline, p), "\n")
 
 	if lastBadge < 0 {
-		// No badges yet: insert the model right after the title, keeping the
-		// rest of the file as the body.
+		// No badges yet: the canonical block replaces the title line, since the
+		// block already carries the title. Keeping lines[:titleIdx+1] here left
+		// the original heading above the block and the README ended up with the
+		// title twice.
 		if titleIdx < 0 {
 			return readme
 		}
-		out = append(out, lines[:titleIdx+1]...)
+		out = append(out, lines[:titleIdx]...)
 		out = append(out, block...)
 		body := lines[titleIdx+1:]
 		for len(body) > 0 && strings.TrimSpace(body[0]) == "" {
