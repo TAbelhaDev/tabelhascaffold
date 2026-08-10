@@ -53,18 +53,36 @@ func setup(dir string, p project) error {
 		}
 	}
 
-	files := map[string]string{
-		filepath.Join(workflows, "ci.yml"): ciYAML,
-	}
+	ciTmpl := ciYAML
 	if p.web() {
-		files[filepath.Join(workflows, "ci.yml")] = ciWebYAML
+		ciTmpl = ciWebYAML
+	}
+	files := map[string]string{
+		filepath.Join(workflows, "ci.yml"): ciTmpl,
 	}
 	if !p.Lib {
 		releaseTmpl := releaseYAML
 		if p.web() {
 			releaseTmpl = releaseWebYAML
 		}
-		files[filepath.Join(workflows, "release.yml")] = render(releaseTmpl, p)
+		releaseYML, err := render(releaseTmpl, p)
+		if err != nil {
+			return fmt.Errorf("release.yml: %w", err)
+		}
+		files[filepath.Join(workflows, "release.yml")] = releaseYML
+	}
+
+	bugReport, err := render(bugReportYAML, p)
+	if err != nil {
+		return fmt.Errorf("bug_report.yml: %w", err)
+	}
+	featureRequest, err := render(featureRequestYAML, p)
+	if err != nil {
+		return fmt.Errorf("feature_request.yml: %w", err)
+	}
+	contributing, err := render(contributingMD, p)
+	if err != nil {
+		return fmt.Errorf("CONTRIBUTING.md: %w", err)
 	}
 
 	// The remaining scaffold files are only created when missing, so an
@@ -72,13 +90,13 @@ func setup(dir string, p project) error {
 	// aren't clobbered by a re-run. New projects get the canonical (PT-BR)
 	// versions.
 	createIfMissing := map[string]string{
-		filepath.Join(issues, "bug_report.yml"):     render(bugReportYAML, p),
-		filepath.Join(issues, "feature_request.yml"): render(featureRequestYAML, p),
-		filepath.Join(issues, "config.yml"):          issueConfigYAML,
+		filepath.Join(issues, "bug_report.yml"):                   bugReport,
+		filepath.Join(issues, "feature_request.yml"):              featureRequest,
+		filepath.Join(issues, "config.yml"):                       issueConfigYAML,
 		filepath.Join(dir, ".github", "PULL_REQUEST_TEMPLATE.md"): prTemplateMD,
-		filepath.Join(dir, "CONTRIBUTING.md"):                      render(contributingMD, p),
-		filepath.Join(dir, "CHANGELOG.md"):                         changelogMD,
-		filepath.Join(dir, "LICENSE"):                              agplLicense,
+		filepath.Join(dir, "CONTRIBUTING.md"):                     contributing,
+		filepath.Join(dir, "CHANGELOG.md"):                        changelogMD,
+		filepath.Join(dir, "LICENSE"):                             agplLicense,
 	}
 	for path, content := range createIfMissing {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -94,15 +112,20 @@ func setup(dir string, p project) error {
 	return nil
 }
 
-// render fills a text/template with the project shape.
-func render(tmpl string, p project) string {
-	var buf bytes.Buffer
-	if t, err := template.New("t").Parse(tmpl); err == nil {
-		if err := t.Execute(&buf, p); err != nil {
-			return tmpl
-		}
+// render fills a text/template with the project shape. It reports failure
+// instead of falling back to something plausible: a template that failed to
+// parse used to yield an empty string, and setup would happily write a
+// zero-byte ci.yml or CONTRIBUTING.md with no diagnostic at all.
+func render(tmpl string, p project) (string, error) {
+	t, err := template.New("t").Parse(tmpl)
+	if err != nil {
+		return "", fmt.Errorf("parse template: %w", err)
 	}
-	return buf.String()
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, p); err != nil {
+		return "", fmt.Errorf("execute template: %w", err)
+	}
+	return buf.String(), nil
 }
 
 // humanizeTitle converts a kebab/lowercase name into a title-case project
