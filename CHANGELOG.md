@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `.tabelascaffoldignore`: lista de caminhos que o `setup` não sobrescreve e que
+  o `doctor` não reporta como divergência. Existe porque nem toda diferença é
+  dívida — o `release.yml` do `tabelawebui` publica no npm e seria substituído
+  pelo workflow genérico na próxima rodada do `setup`.
+
 ## [0.3.0] — 2026-08-10
 
 ### Added

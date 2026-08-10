@@ -17,9 +17,9 @@ type drift struct {
 // and reports the differences without writing anything. It exists because
 // setup is destructive by nature — this is the way to ask "how far has this
 // repo drifted?" without committing to overwriting it.
-func doctor(dir string, p project) ([]drift, error) {
+func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 	if p.Name == "" {
-		return nil, fmt.Errorf("nome vazio")
+		return nil, nil, fmt.Errorf("nome vazio")
 	}
 	if p.Title == "" {
 		p.Title = humanizeTitle(p.Name)
@@ -28,13 +28,27 @@ func doctor(dir string, p project) ([]drift, error) {
 		p.Org = "TabelaDev"
 	}
 
+	// Paths the repo declared as deliberately custom are neither compared nor
+	// reported — otherwise doctor stays red forever on a divergence that is the
+	// whole point (tabelawebui's npm release workflow).
+	ign, err := loadIgnore(dir)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", ignoreFile, err)
+	}
+
 	var out []drift
+	check := func(rel, want string) {
+		if ign.has(rel) {
+			return
+		}
+		out = append(out, compareFile(dir, rel, want)...)
+	}
 
 	ciTmpl := ciYAML
 	if p.web() {
 		ciTmpl = ciWebYAML
 	}
-	out = append(out, compareFile(dir, filepath.Join(".github", "workflows", "ci.yml"), ciTmpl)...)
+	check(filepath.Join(".github", "workflows", "ci.yml"), ciTmpl)
 
 	if !p.Lib {
 		releaseTmpl := releaseYAML
@@ -43,9 +57,9 @@ func doctor(dir string, p project) ([]drift, error) {
 		}
 		want, err := render(releaseTmpl, p)
 		if err != nil {
-			return nil, fmt.Errorf("release.yml: %w", err)
+			return nil, nil, fmt.Errorf("release.yml: %w", err)
 		}
-		out = append(out, compareFile(dir, filepath.Join(".github", "workflows", "release.yml"), want)...)
+		check(filepath.Join(".github", "workflows", "release.yml"), want)
 	}
 
 	// These are create-if-missing in setup, so drift here means "absent", not
@@ -59,6 +73,9 @@ func doctor(dir string, p project) ([]drift, error) {
 		"CHANGELOG.md",
 		"LICENSE",
 	} {
+		if ign.has(rel) {
+			continue
+		}
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			out = append(out, drift{rel, "faltando"})
 		}
@@ -66,19 +83,21 @@ func doctor(dir string, p project) ([]drift, error) {
 
 	// The README header is canonical too: if updateHeader would rewrite it,
 	// the repo is off-model.
-	data, err := os.ReadFile(filepath.Join(dir, "README.md"))
-	switch {
-	case os.IsNotExist(err):
-		out = append(out, drift{"README.md", "faltando"})
-	case err != nil:
-		return nil, err
-	default:
-		if updateHeader(string(data), p) != string(data) {
-			out = append(out, drift{"README.md", "cabeçalho fora do padrão"})
+	if !ign.has("README.md") {
+		data, err := os.ReadFile(filepath.Join(dir, "README.md"))
+		switch {
+		case os.IsNotExist(err):
+			out = append(out, drift{"README.md", "faltando"})
+		case err != nil:
+			return nil, nil, err
+		default:
+			if updateHeader(string(data), p) != string(data) {
+				out = append(out, drift{"README.md", "cabeçalho fora do padrão"})
+			}
 		}
 	}
 
-	return out, nil
+	return out, ign, nil
 }
 
 // compareFile reports whether the repo's copy of rel matches the canonical

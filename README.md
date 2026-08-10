@@ -43,6 +43,7 @@ go build -o tabelascaffold .
 ```bash
 tabelascaffold setup . --name meuapp --org TabelaDev
 tabelascaffold setup . --name minha-lib --org TabelaDev --lib   # sem release de binário
+tabelascaffold doctor . --name meuapp --org TabelaDev           # o que divergiu (não escreve nada)
 tabelascaffold release . --version v0.1.0                       # tag + push (workflow gera o release)
 ```
 
@@ -61,6 +62,24 @@ README.md                           # badges inseridos/atualizados, ko-fi abaixo
 
 O `release` só cria a tag e empurra — o workflow de release builda os
 binários e publica o GitHub release (com detecção de prerelease `-beta.N`).
+
+O `doctor` é a contrapartida read-only do `setup`: compara o repo com os
+templates canônicos, lista o que divergiu e sai com código 1 se houver
+divergência — dá pra usar como checagem em CI. Não escreve nada.
+
+### Divergência de propósito
+
+Nem toda diferença é dívida. O `tabelawebui` publica no npm, então o
+`release.yml` dele **não** pode ser o genérico. Um `.tabelascaffoldignore` na
+raiz do repo lista os caminhos que o `setup` não sobrescreve e que o `doctor`
+não reporta:
+
+```
+# release próprio: publica no npm via Trusted Publishing
+.github/workflows/release.yml
+```
+
+Um caminho por linha, relativo à raiz, `#` para comentário.
 
 ## Como funciona
 

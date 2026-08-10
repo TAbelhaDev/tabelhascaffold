@@ -210,8 +210,17 @@ func headerLimit(lines []string) int {
 	return len(lines) - 1
 }
 
-// applyBadges normalizes the README header of dir in place.
+// applyBadges normalizes the README header of dir in place, unless the repo
+// opted the README out in .tabelascaffoldignore.
 func applyBadges(dir string, p project) error {
+	ign, err := loadIgnore(dir)
+	if err != nil {
+		return err
+	}
+	if ign.has("README.md") {
+		return nil
+	}
+
 	path := filepath.Join(dir, "README.md")
 	data, err := os.ReadFile(path)
 	if err != nil {

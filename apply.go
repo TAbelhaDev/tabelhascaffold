@@ -104,7 +104,18 @@ func setup(dir string, p project) error {
 		}
 	}
 
+	// A repo may deliberately diverge from the canonical scaffold (tabelawebui's
+	// release.yml publishes to npm). Those paths are declared in
+	// .tabelascaffoldignore and setup leaves them alone.
+	ign, err := loadIgnore(dir)
+	if err != nil {
+		return fmt.Errorf("%s: %w", ignoreFile, err)
+	}
+
 	for path, content := range files {
+		if ign.hasAbs(dir, path) {
+			continue
+		}
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 			return err
 		}

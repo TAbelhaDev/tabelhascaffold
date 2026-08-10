@@ -137,20 +137,27 @@ func runDoctor(args []string) int {
 		name = filepath.Base(abs)
 	}
 
-	drifts, err := doctor(abs, project{Name: name, Title: title, Org: org, Lib: *lib, Stack: stack})
+	drifts, ign, err := doctor(abs, project{Name: name, Title: title, Org: org, Lib: *lib, Stack: stack})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "erro:", err)
 		return 1
 	}
+
 	if len(drifts) == 0 {
 		fmt.Printf("tabelascaffold: %s está alinhado com os templates canônicos\n", abs)
-		return 0
+	} else {
+		fmt.Printf("tabelascaffold: %d divergência(s) em %s\n", len(drifts), abs)
+		for _, d := range drifts {
+			fmt.Printf("  %-42s %s\n", d.Path, d.Reason)
+		}
 	}
-	fmt.Printf("tabelascaffold: %d divergência(s) em %s\n", len(drifts), abs)
-	for _, d := range drifts {
-		fmt.Printf("  %-42s %s\n", d.Path, d.Reason)
+	if len(ign) > 0 {
+		fmt.Printf("  (%d isento(s) via %s: %s)\n", len(ign), ignoreFile, strings.Join(ign.sorted(), ", "))
 	}
-	return 1
+	if len(drifts) > 0 {
+		return 1
+	}
+	return 0
 }
 
 func runRelease(args []string) int {

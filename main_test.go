@@ -143,6 +143,84 @@ func TestRenderFailsOnBadTemplate(t *testing.T) {
 	}
 }
 
+func TestSetupRespectsIgnore(t *testing.T) {
+	// The workflows are the files setup always overwrites, so they are also the
+	// ones a deliberately custom repo needs protected — tabelawebui's
+	// release.yml publishes to npm and must survive a re-run.
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".github", "workflows"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	custom := "name: Release\n# publishes to npm, not a generic GitHub release\n"
+	relPath := filepath.Join(dir, ".github", "workflows", "release.yml")
+	if err := os.WriteFile(relPath, []byte(custom), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ignore := "# custom npm release\n.github/workflows/release.yml\n"
+	if err := os.WriteFile(filepath.Join(dir, ignoreFile), []byte(ignore), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := setup(dir, project{Name: "tabelawebui", Org: "TabelaDev", Stack: "web"}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := os.ReadFile(relPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != custom {
+		t.Fatalf("ignored release.yml was overwritten:\n%s", got)
+	}
+	// The non-ignored workflow is still written.
+	if _, err := os.Stat(filepath.Join(dir, ".github", "workflows", "ci.yml")); err != nil {
+		t.Fatalf("ci.yml should still be written: %v", err)
+	}
+}
+
+func TestDoctorSkipsIgnored(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".github", "workflows"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".github", "workflows", "release.yml"), []byte("name: totally custom\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	p := project{Name: "tabelawebui", Org: "TabelaDev", Stack: "web"}
+
+	before, _, err := doctor(dir, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hasDrift(before, filepath.Join(".github", "workflows", "release.yml")) {
+		t.Fatal("custom release.yml should be reported as drift without an ignore file")
+	}
+
+	if err := os.WriteFile(filepath.Join(dir, ignoreFile), []byte(".github/workflows/release.yml\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	after, ign, err := doctor(dir, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasDrift(after, filepath.Join(".github", "workflows", "release.yml")) {
+		t.Fatal("ignored release.yml should not be reported as drift")
+	}
+	if len(ign) != 1 {
+		t.Fatalf("ignore set = %v, want 1 entry", ign)
+	}
+}
+
+func hasDrift(ds []drift, path string) bool {
+	for _, d := range ds {
+		if d.Path == path {
+			return true
+		}
+	}
+	return false
+}
+
 func TestHeaderBlockKoFiBelow(t *testing.T) {
 	block := headerBlock("My Tool", "", project{Name: "x", Org: "TabelaDev"})
 	lines := strings.Split(block, "\n")
