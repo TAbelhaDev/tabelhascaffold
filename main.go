@@ -16,6 +16,8 @@ func main() {
 	switch os.Args[1] {
 	case "setup":
 		os.Exit(runSetup(os.Args[2:]))
+	case "doctor":
+		os.Exit(runDoctor(os.Args[2:]))
 	case "release":
 		os.Exit(runRelease(os.Args[2:]))
 	case "help", "-h", "--help":
@@ -33,10 +35,13 @@ func usage() {
 comandos:
   setup <dir>    injeta a estrutura open-source (CI, release, templates,
                  CONTRIBUTING, LICENSE, CHANGELOG, badges do README) num repo
+  doctor <dir>   compara o repo com os templates canônicos e lista o que
+                 divergiu — não escreve nada; sai com código 1 se houver
+                 divergência
   release <dir>  cria a tag git e empurra, deixando o workflow de release
                  gerar os binários e o GitHub release
 
-setup flags:
+setup/doctor flags:
   --name X     nome do binário/módulo (padrão: basename do dir)
   --title X    título humano pro CONTRIBUTING (padrão: derivado de --name)
   --org X      org/owner do repo (padrão: TabelaDev)
@@ -94,6 +99,58 @@ func runSetup(args []string) int {
 	fmt.Printf("  nome=%s org=%s lib=%v stack=%s\n", p.Name, p.Org, p.Lib, p.Stack)
 	fmt.Println("  agora: tabelascaffold release . --version v0.1.0")
 	return 0
+}
+
+// runDoctor takes the same flags as setup — it has to render the same files to
+// compare against them — but never writes.
+func runDoctor(args []string) int {
+	fs := flag.NewFlagSet("doctor", flag.ExitOnError)
+	var name, title, org, stack string
+	lib := fs.Bool("lib", false, "")
+	fs.StringVar(&name, "name", "", "")
+	fs.StringVar(&title, "title", "", "")
+	fs.StringVar(&org, "org", "", "")
+	fs.StringVar(&stack, "stack", "tui", "")
+
+	dir, rest := splitArgs(args, map[string]bool{
+		"-name": true, "--name": true,
+		"-title": true, "--title": true,
+		"-org": true, "--org": true,
+		"-stack": true, "--stack": true,
+	})
+	fs.Parse(rest)
+	if fs.NArg() > 0 {
+		dir = fs.Arg(0)
+	}
+
+	if stack != "tui" && stack != "web" {
+		fmt.Fprintf(os.Stderr, "erro: stack desconhecido %q (esperado tui ou web)\n", stack)
+		return 1
+	}
+
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "erro:", err)
+		return 1
+	}
+	if name == "" {
+		name = filepath.Base(abs)
+	}
+
+	drifts, err := doctor(abs, project{Name: name, Title: title, Org: org, Lib: *lib, Stack: stack})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "erro:", err)
+		return 1
+	}
+	if len(drifts) == 0 {
+		fmt.Printf("tabelascaffold: %s está alinhado com os templates canônicos\n", abs)
+		return 0
+	}
+	fmt.Printf("tabelascaffold: %d divergência(s) em %s\n", len(drifts), abs)
+	for _, d := range drifts {
+		fmt.Printf("  %-42s %s\n", d.Path, d.Reason)
+	}
+	return 1
 }
 
 func runRelease(args []string) int {
