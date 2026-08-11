@@ -2,8 +2,10 @@
 
 # tabelascaffold
 
-**Injeta a estrutura open-source (CI, release, templates, CONTRIBUTING,
-LICENSE, CHANGELOG, badges) num projeto Go Bubble Tea novo.**
+**Injects the open-source structure (CI, release, templates, CONTRIBUTING,
+LICENSE, CHANGELOG, badges) into a new Go Bubble Tea project.**
+
+**English** · [Português](README.pt-BR.md)
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/TabelaDev/tabelascaffold?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
@@ -16,21 +18,21 @@ LICENSE, CHANGELOG, badges) num projeto Go Bubble Tea novo.**
 
 ---
 
-## O que é
+## What it is
 
-Um CLI que aplica — de forma idempotente — toda a estrutura open-source que
-os meus TUIs Go compartilham: os workflows de CI e release, os templates de
-issue e PR, o `CONTRIBUTING.md`, o `LICENSE` AGPL-3.0, o `CHANGELOG.md`
-skeleton e o bloco de badges do README (com o botão ko-fi **abaixo** das tags
-de Go/Licença). Um repo novo começa com o mesmo esqueleto dos maduros.
+A CLI that idempotently applies the whole open-source structure my Go TUIs
+share: the CI and release workflows, the issue and PR templates, the
+`CONTRIBUTING.md` pair, the AGPL-3.0 `LICENSE`, the `CHANGELOG.md` skeleton and
+the README badge block (with the ko-fi button **below** the Go/License tags). A
+new repo starts with the same skeleton as the mature ones.
 
-## Instalação
+## Installation
 
 ```bash
 go install github.com/ianptkcs/tabelascaffold@latest
 ```
 
-Ou compilando a partir do source:
+Or building from source:
 
 ```bash
 git clone https://github.com/TabelaDev/tabelascaffold.git
@@ -38,73 +40,97 @@ cd tabelascaffold
 go build -o tabelascaffold .
 ```
 
-## Uso
+## Usage
 
 ```bash
-tabelascaffold setup . --name meuapp --org TabelaDev
-tabelascaffold setup . --name minha-lib --org TabelaDev --lib   # sem release de binário
-tabelascaffold doctor . --name meuapp --org TabelaDev           # o que divergiu (não escreve nada)
-tabelascaffold release . --version v0.1.0                       # tag + push (workflow gera o release)
+tabelascaffold setup . --name myapp --org TabelaDev
+tabelascaffold setup . --name my-lib --org TabelaDev --lib   # no binary release
+tabelascaffold doctor . --name myapp --org TabelaDev         # what drifted (writes nothing)
+tabelascaffold release . --version v0.1.0                    # tag + push (workflow builds the release)
 ```
 
-O que `setup` cria:
+What `setup` creates:
 
 ```
 .github/workflows/ci.yml            # vet + test + build
-.github/workflows/release.yml       # build matriz linux/darwin × amd64/arm64 + GitHub release
+.github/workflows/release.yml       # linux/darwin × amd64/arm64 matrix + GitHub release
 .github/ISSUE_TEMPLATE/*.yml        # bug + feature (+ config)
 .github/PULL_REQUEST_TEMPLATE.md
-CONTRIBUTING.md
-LICENSE                             # AGPL-3.0 (só se ainda não existir)
-CHANGELOG.md                        # skeleton Keep a Changelog (só se não existir)
-README.md                           # badges inseridos/atualizados, ko-fi abaixo das tags
+CONTRIBUTING.md                     # English, canonical
+CONTRIBUTING.pt-BR.md               # Portuguese half of the pair
+LICENSE                             # AGPL-3.0 (only if absent)
+CHANGELOG.md                        # Keep a Changelog skeleton (only if absent)
+README.md                           # badges inserted/updated, ko-fi below the tags
+README.pt-BR.md                     # header normalized when the file exists
 ```
 
-O `release` só cria a tag e empurra — o workflow de release builda os
-binários e publica o GitHub release (com detecção de prerelease `-beta.N`).
+`release` only creates the tag and pushes it — the release workflow builds the
+binaries and publishes the GitHub release (detecting `-beta.N` prereleases).
 
-O `doctor` é a contrapartida read-only do `setup`: compara o repo com os
-templates canônicos, lista o que divergiu e sai com código 1 se houver
-divergência — dá pra usar como checagem em CI. Não escreve nada.
+`doctor` is the read-only counterpart of `setup`: it compares the repo against
+the canonical templates, lists what drifted and exits 1 when anything did — so
+it works as a CI check. It writes nothing.
 
-### Divergência de propósito
+### Deliberate divergence
 
-Nem toda diferença é dívida. O `tabelawebui` publica no npm, então o
-`release.yml` dele **não** pode ser o genérico. Um `.tabelascaffoldignore` na
-raiz do repo lista os caminhos que o `setup` não sobrescreve e que o `doctor`
-não reporta:
+Not every difference is debt. `tabelawebui` publishes to npm, so its
+`release.yml` **cannot** be the generic one. A `.tabelascaffoldignore` at the
+repo root lists the paths `setup` will not overwrite and `doctor` will not
+report:
 
 ```
-# release próprio: publica no npm via Trusted Publishing
+# own release: publishes to npm via Trusted Publishing
 .github/workflows/release.yml
 ```
 
-Um caminho por linha, relativo à raiz, `#` para comentário.
+One path per line, relative to the root, `#` for comments.
 
-## Como funciona
+## Language convention
 
-- **Templates embutidos** com `go:embed` — o binário é autocontido.
-- **Idempotente** — workflows são sempre sobrescritos com a versão canônica;
-  issue/PR templates, `CONTRIBUTING.md`, `CHANGELOG.md` e `LICENSE` são
-  criados apenas quando não existem, então um projeto com templates
-  customizados (ex. em inglês) ou histórico não é sobrescrito.
-- **Badges no lugar certo** — o bloco de badges (Go Version, License, Bubble
-  Tea, tabelatuiui) fica na primeira linha e o ko-fi na linha de baixo,
-  sempre.
+The scaffold is where the org-wide language rule lives, because it is the only
+mechanism that reaches every repo without depending on anyone remembering it.
+The full rule is in [CONTRIBUTING.md](CONTRIBUTING.md#language); the short
+version:
 
-## Quem usa
+- **English, no exceptions** — everything a developer types: identifiers, file
+  names, routes, query parameters, database schema, comments, commit messages.
+  Brazilian domain vocabulary (`pix`, `boleto`, `cpf`) stays as-is; it is proper
+  nouns, not a pending translation.
+- **Bilingual** — `README.md` and `CONTRIBUTING.md`, English canonical with a
+  `.pt-BR.md` half beside it and a selector at the top of each.
+- **English only** — `CHANGELOG.md`, deliberately: it changes every release and
+  two hand-kept copies drift.
+- **Untranslated** — working notes (`AGENTS.md`, `TODO.md`, `requests/`) and
+  content that *is* the product.
 
-| Projeto | Lib? | De onde veio |
+`setup` writes both halves of the `CONTRIBUTING` pair. It does **not** write a
+`README.pt-BR.md`: a translation is prose, not something to generate. `doctor`
+reports the missing half instead, and normalizes the header of both once they
+exist.
+
+## How it works
+
+- **Embedded templates** via `go:embed` — the binary is self-contained.
+- **Idempotent** — workflows are always overwritten with the canonical version;
+  issue/PR templates, the `CONTRIBUTING` pair, `CHANGELOG.md` and `LICENSE` are
+  only created when absent, so a project with customized templates or history is
+  never clobbered.
+- **Badges in the right place** — the badge block (Go Version, License, Bubble
+  Tea, tabelatuiui) sits on the first line and ko-fi on the line below, always.
+
+## Who uses it
+
+| Project | Lib? | Origin |
 |---|---|---|
-| [djobs](https://github.com/ianptkcs/dankjobs) | app | já canônico (fonte do padrão) |
-| [tabelaradar](https://github.com/TabelaDev/tabelaradar) | app | unificado |
-| [tabelakanban](https://github.com/TabelaDev/tabelakanban) | app | unificado |
-| [tabelatuiui](https://github.com/TabelaDev/tabelatuiui) | lib | unificado |
+| [djobs](https://github.com/ianptkcs/dankjobs) | app | already canonical (source of the pattern) |
+| [tabelaradar](https://github.com/TabelaDev/tabelaradar) | app | unified |
+| [tabelakanban](https://github.com/TabelaDev/tabelakanban) | app | unified |
+| [tabelatuiui](https://github.com/TabelaDev/tabelatuiui) | lib | unified |
 
-O chrome das TUIs em si (tema, panels, helpers de IPC) vem da
+The TUI chrome itself (theme, panels, IPC helpers) comes from
 [`tabelatuiui`](https://github.com/TabelaDev/tabelatuiui).
 
-## Desenvolvimento
+## Development
 
 ```bash
 go test ./...
@@ -112,16 +138,16 @@ go test ./...
 
 ## Changelog
 
-Veja [CHANGELOG.md](CHANGELOG.md) para o histórico de versões.
+See [CHANGELOG.md](CHANGELOG.md) for the version history.
 
-## Apoie o projeto
+## Support the project
 
 - **Global**: [ko-fi.com/ianptkcs](https://ko-fi.com/ianptkcs)
-- **Brasil (Pix)**: escaneie o QR abaixo ou copie o código
+- **Brazil (Pix)**: scan the QR below or copy the code
 
   <img src="pix-qr.png" alt="Pix QR" width="200" />
 
-  <details><summary>Código Pix (copiar)</summary>
+  <details><summary>Pix code (copy)</summary>
 
   ```
   00020126580014BR.GOV.BCB.PIX01365ad933b0-dcdc-4525-a736-0759902aeec65204000053039865802BR5925Ian Patrick da Costa Soar6009SAO PAULO62140510tQA85x6Dov63041FB6
@@ -129,6 +155,6 @@ Veja [CHANGELOG.md](CHANGELOG.md) para o histórico de versões.
 
   </details>
 
-## Licença
+## License
 
 [GNU AGPL-3.0](LICENSE).

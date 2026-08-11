@@ -34,6 +34,9 @@ var prTemplateMD string
 //go:embed templates/CONTRIBUTING.md
 var contributingMD string
 
+//go:embed templates/CONTRIBUTING.pt-BR.md
+var contributingPtBrMD string
+
 //go:embed templates/CHANGELOG.md
 var changelogMD string
 

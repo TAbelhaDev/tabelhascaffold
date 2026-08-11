@@ -70,6 +70,11 @@ func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 		filepath.Join(".github", "ISSUE_TEMPLATE", "config.yml"),
 		filepath.Join(".github", "PULL_REQUEST_TEMPLATE.md"),
 		"CONTRIBUTING.md",
+		// The Portuguese halves of the bilingual pair. Reported as missing, never
+		// compared: a translation is prose and is allowed to diverge from the
+		// template, exactly like the English half.
+		"CONTRIBUTING.pt-BR.md",
+		"README.pt-BR.md",
 		"CHANGELOG.md",
 		"LICENSE",
 	} {
@@ -82,22 +87,50 @@ func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 	}
 
 	// The README header is canonical too: if updateHeader would rewrite it,
-	// the repo is off-model.
-	if !ign.has("README.md") {
-		data, err := os.ReadFile(filepath.Join(dir, "README.md"))
-		switch {
-		case os.IsNotExist(err):
-			out = append(out, drift{"README.md", "faltando"})
-		case err != nil:
-			return nil, nil, err
-		default:
-			if updateHeader(string(data), p) != string(data) {
-				out = append(out, drift{"README.md", "cabeçalho fora do padrão"})
-			}
-		}
+	// the repo is off-model. Both halves of the bilingual pair are checked; the
+	// Portuguese one only when it exists, since its absence is already reported
+	// above and saying it twice is noise.
+	en := p
+	en.Lang = ""
+	if err := checkReadmeHeader(dir, "README.md", en, ign, &out, true); err != nil {
+		return nil, nil, err
+	}
+	ptBR := p
+	ptBR.Lang = langPtBR
+	if err := checkReadmeHeader(dir, "README.pt-BR.md", ptBR, ign, &out, false); err != nil {
+		return nil, nil, err
 	}
 
 	return out, ign, nil
+}
+
+// checkReadmeHeader appends a drift when the README variant at rel has a header
+// updateHeader would rewrite. With reportMissing set, an absent file is itself
+// the drift.
+func checkReadmeHeader(
+	dir, rel string,
+	p project,
+	ign ignoreSet,
+	out *[]drift,
+	reportMissing bool,
+) error {
+	if ign.has(rel) {
+		return nil
+	}
+	data, err := os.ReadFile(filepath.Join(dir, rel))
+	switch {
+	case os.IsNotExist(err):
+		if reportMissing {
+			*out = append(*out, drift{rel, "faltando"})
+		}
+		return nil
+	case err != nil:
+		return err
+	}
+	if updateHeader(string(data), p) != string(data) {
+		*out = append(*out, drift{rel, "cabeçalho fora do padrão"})
+	}
+	return nil
 }
 
 // compareFile reports whether the repo's copy of rel matches the canonical

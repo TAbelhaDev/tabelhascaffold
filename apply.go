@@ -23,7 +23,16 @@ type project struct {
 	// Stack is the project stack: "" or "tui" for Go TUIs, "web" for
 	// SvelteKit/Cloudflare sites.
 	Stack string
+	// Lang is which half of a bilingual doc is being rendered: "" for English —
+	// the canonical one, since it is what GitHub renders — or langPtBR. Only the
+	// README/CONTRIBUTING pair is bilingual; see the Language section of
+	// CONTRIBUTING.md for what that covers and what it deliberately does not.
+	Lang string
 }
+
+// langPtBR marks the Portuguese half of a bilingual doc, and is the suffix its
+// filename carries.
+const langPtBR = "pt-BR"
 
 // web reports whether the project uses the web scaffolding.
 func (p project) web() bool { return p.Stack == "web" }
@@ -84,6 +93,15 @@ func setup(dir string, p project) error {
 	if err != nil {
 		return fmt.Errorf("CONTRIBUTING.md: %w", err)
 	}
+	// The Portuguese half is rendered from the same project shape, only with the
+	// language marker flipped, so the two halves cannot disagree about the
+	// stack-specific commands they tell a contributor to run.
+	ptBR := p
+	ptBR.Lang = langPtBR
+	contributingPtBr, err := render(contributingPtBrMD, ptBR)
+	if err != nil {
+		return fmt.Errorf("CONTRIBUTING.pt-BR.md: %w", err)
+	}
 
 	// The remaining scaffold files are only created when missing, so an
 	// existing project's custom prose (language, specifics) and history
@@ -95,6 +113,7 @@ func setup(dir string, p project) error {
 		filepath.Join(issues, "config.yml"):                       issueConfigYAML,
 		filepath.Join(dir, ".github", "PULL_REQUEST_TEMPLATE.md"): prTemplateMD,
 		filepath.Join(dir, "CONTRIBUTING.md"):                     contributing,
+		filepath.Join(dir, "CONTRIBUTING.pt-BR.md"):               contributingPtBr,
 		filepath.Join(dir, "CHANGELOG.md"):                        changelogMD,
 		filepath.Join(dir, "LICENSE"):                             agplLicense,
 	}

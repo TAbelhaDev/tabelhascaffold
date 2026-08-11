@@ -5,6 +5,39 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-08-11
+
+> From this entry on the changelog is written in English, per the language
+> convention introduced here. Earlier entries are left as the historical record
+> rather than retranslated.
+
+### Added
+
+- The org-wide language convention now lives in the scaffold, which is the only
+  mechanism that reaches every repo without depending on anyone remembering it.
+  `templates/CONTRIBUTING.md` carries the rule and is now a bilingual pair:
+  English is canonical (it is what GitHub renders) and `CONTRIBUTING.pt-BR.md`
+  sits beside it. `setup` writes both halves.
+- README headers carry a language selector between the tagline and the badges,
+  pointing at the other half of the pair. `applyBadges` normalizes both
+  `README.md` and `README.pt-BR.md`. The selector goes above the badges so a
+  reader who cannot read the canonical English finds the way out first, and so
+  ko-fi stays adjacent to the closing `</div>`.
+- `doctor` reports a missing `README.pt-BR.md` or `CONTRIBUTING.pt-BR.md`, and
+  checks the header of the Portuguese README once it exists.
+
+### Changed
+
+- The `CONTRIBUTING` template is stack-aware: a web project is told to run
+  `bun run check` and friends instead of `go vet ./...`. Both halves render from
+  the same project shape, so they cannot disagree about it.
+
+### Notes
+
+- `setup` does not generate `README.pt-BR.md`. A translation is prose, not
+  something to scaffold — `doctor` reports its absence and leaves the writing to
+  a human.
+
 ## [0.4.1] — 2026-08-10
 
 ### Fixed

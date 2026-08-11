@@ -12,6 +12,11 @@ var (
 	divider   = regexp.MustCompile(`^\s*-{3,}\s*$`)
 	divOpen   = regexp.MustCompile(`^\s*<div`)
 	divClose  = regexp.MustCompile(`^\s*<\/div`)
+	// The language selector sits in the header between the tagline and the
+	// badges, so the tagline scan has to recognise and skip it — otherwise a
+	// re-run would take it for custom prose and the README would end up with two
+	// copies of the line.
+	langLine = regexp.MustCompile(`\[(English|Português)\]\(README(\.pt-BR)?\.md\)`)
 )
 
 // techBadges returns the badge lines proper for the project stack — license
@@ -43,6 +48,17 @@ func techBadges(p project) []string {
 
 const kofi = "[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)"
 
+// langSwitch is the selector between the two halves of the bilingual README.
+// It goes above the badges rather than below the ko-fi button: a reader who
+// cannot read the canonical English should find the way out before anything
+// else, and ko-fi stays adjacent to the closing </div> where it belongs.
+func langSwitch(p project) string {
+	if p.Lang == langPtBR {
+		return "[English](README.md) · **Português**"
+	}
+	return "**English** · [Português](README.pt-BR.md)"
+}
+
 // headerBlock builds the canonical README header — a centered <div> holding
 // the project title, its tagline, the tech badges, and the ko-fi button
 // separated on its own line, then the --- divider that closes the header.
@@ -53,6 +69,7 @@ func headerBlock(title, tagline string, p project) string {
 	if strings.TrimSpace(tagline) != "" {
 		b.WriteString("\n" + tagline + "\n")
 	}
+	b.WriteString("\n" + langSwitch(p) + "\n")
 	b.WriteString("\n" + strings.Join(techBadges(p), "\n"))
 	b.WriteString("\n\n" + kofi)
 	b.WriteString("\n\n</div>")
@@ -113,6 +130,9 @@ func updateHeader(readme string, p project) string {
 				continue
 			}
 			if badgeLine.MatchString(l) || divClose.MatchString(l) || divOpen.MatchString(l) {
+				continue
+			}
+			if langLine.MatchString(l) {
 				continue
 			}
 			prose = append(prose, l)
@@ -214,17 +234,40 @@ func headerLimit(lines []string) int {
 
 // applyBadges normalizes the README header of dir in place, unless the repo
 // opted the README out in .tabelascaffoldignore.
+//
+// Both halves of the bilingual pair are normalized: README.md always, and
+// README.pt-BR.md when it exists. The Portuguese half is not created here — a
+// translation is prose, not something to scaffold — so a repo without one is
+// left alone and reported by doctor instead.
 func applyBadges(dir string, p project) error {
 	ign, err := loadIgnore(dir)
 	if err != nil {
 		return err
 	}
-	if ign.has("README.md") {
+
+	en := p
+	en.Lang = ""
+	if err := normalizeReadme(dir, "README.md", en, ign, true); err != nil {
+		return err
+	}
+
+	ptBR := p
+	ptBR.Lang = langPtBR
+	return normalizeReadme(dir, "README.pt-BR.md", ptBR, ign, false)
+}
+
+// normalizeReadme rewrites one README variant's header. With required set, a
+// missing file is an error the caller surfaces; without it, absence is fine.
+func normalizeReadme(dir, rel string, p project, ign ignoreSet, required bool) error {
+	if ign.has(rel) {
 		return nil
 	}
 
-	path := filepath.Join(dir, "README.md")
+	path := filepath.Join(dir, rel)
 	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) && !required {
+		return nil
+	}
 	if err != nil {
 		return err
 	}

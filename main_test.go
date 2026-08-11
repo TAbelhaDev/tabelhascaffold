@@ -92,7 +92,8 @@ func TestUpdateHeaderPreservesTagline(t *testing.T) {
 }
 
 func TestUpdateHeaderIdempotent(t *testing.T) {
-	src := "<div align=\"center\">\n\n# TabelaKanban\n\n**Kanban TUI sobre markdown.**\n\n[![Go Version](https://img.shields.io/github/go-mod/go-version/TabelaDev/tabelakanban?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)\n[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)\n[![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)\n[![Powered by tabelatuiui](https://img.shields.io/badge/theme-tabelatuiui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelatuiui)\n\n[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)\n\n</div>\n\n---\n\nBODY\n"
+	// Canonical includes the language selector between tagline and badges.
+	src := "<div align=\"center\">\n\n# TabelaKanban\n\n**Kanban TUI sobre markdown.**\n\n**English** · [Português](README.pt-BR.md)\n\n[![Go Version](https://img.shields.io/github/go-mod/go-version/TabelaDev/tabelakanban?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)\n[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)\n[![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)\n[![Powered by tabelatuiui](https://img.shields.io/badge/theme-tabelatuiui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelatuiui)\n\n[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)\n\n</div>\n\n---\n\nBODY\n"
 	p := project{Name: "tabelakanban", Org: "TabelaDev"}
 	once := updateHeader(src, p)
 	if once != src {
@@ -387,6 +388,107 @@ func TestUpdateHeaderIdempotentFromAnyShape(t *testing.T) {
 		}
 		if n := strings.Count(once, "# meuapp"); n != 1 {
 			t.Errorf("%s: title appears %d times, want 1:\n%s", name, n, once)
+		}
+	}
+}
+
+// The bilingual pair is the whole point of the language convention: each half
+// has to point at the other, and only at the other.
+func TestLangSwitchPointsAtTheOtherHalf(t *testing.T) {
+	en := headerBlock("MeuApp", "", project{Name: "meuapp", Org: "TabelaDev"})
+	if !strings.Contains(en, "**English** · [Português](README.pt-BR.md)") {
+		t.Fatalf("English header missing the selector:\n%s", en)
+	}
+
+	pt := headerBlock("MeuApp", "", project{Name: "meuapp", Org: "TabelaDev", Lang: langPtBR})
+	if !strings.Contains(pt, "[English](README.md) · **Português**") {
+		t.Fatalf("Portuguese header missing the selector:\n%s", pt)
+	}
+	if strings.Contains(pt, "README.pt-BR.md") {
+		t.Fatalf("Portuguese header should not link to itself:\n%s", pt)
+	}
+}
+
+// The selector sits between the tagline and the badges, which is inside the
+// range updateHeader scans for custom prose. Without an explicit skip it comes
+// back as "tagline" and the header accumulates a copy per run.
+func TestUpdateHeaderDoesNotDuplicateLangSwitch(t *testing.T) {
+	for _, p := range []project{
+		{Name: "meuapp", Org: "TabelaDev"},
+		{Name: "meuapp", Org: "TabelaDev", Lang: langPtBR},
+	} {
+		src := "# MeuApp\n\nUma linha de tagline.\n\n## Uso\n\nfaz assim\n"
+		once := updateHeader(src, p)
+		twice := updateHeader(once, p)
+		if once != twice {
+			t.Errorf("lang=%q not idempotent\n--- first ---\n%s\n--- second ---\n%s", p.Lang, once, twice)
+		}
+		if n := strings.Count(twice, "·"); n != 1 {
+			t.Errorf("lang=%q: selector appears %d times, want 1:\n%s", p.Lang, n, twice)
+		}
+		if !strings.Contains(twice, "Uma linha de tagline.") {
+			t.Errorf("lang=%q: tagline lost:\n%s", p.Lang, twice)
+		}
+	}
+}
+
+// The Portuguese CONTRIBUTING is scaffolded beside the English one, and both
+// must agree on the stack-specific commands a contributor is told to run.
+func TestSetupWritesBilingualContributing(t *testing.T) {
+	dir := t.TempDir()
+	p := project{Name: "meuapp", Org: "TabelaDev", Stack: "web"}
+	if err := setup(dir, p); err != nil {
+		t.Fatal(err)
+	}
+
+	en, err := os.ReadFile(filepath.Join(dir, "CONTRIBUTING.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pt, err := os.ReadFile(filepath.Join(dir, "CONTRIBUTING.pt-BR.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(string(en), "[Português](CONTRIBUTING.pt-BR.md)") {
+		t.Errorf("English half does not link to the Portuguese one:\n%s", en)
+	}
+	if !strings.Contains(string(pt), "[English](CONTRIBUTING.md)") {
+		t.Errorf("Portuguese half does not link to the English one:\n%s", pt)
+	}
+	// Stack-aware: a web project must not be told to run go vet.
+	for name, body := range map[string]string{"en": string(en), "pt": string(pt)} {
+		if !strings.Contains(body, "bun run check") {
+			t.Errorf("%s: web project not told to run bun:\n%s", name, body)
+		}
+		if strings.Contains(body, "go vet") {
+			t.Errorf("%s: web project told to run go vet:\n%s", name, body)
+		}
+	}
+}
+
+// doctor is how a repo learns it is missing its Portuguese half.
+func TestDoctorReportsMissingBilingualHalves(t *testing.T) {
+	dir := t.TempDir()
+	p := project{Name: "meuapp", Org: "TabelaDev"}
+	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("# MeuApp\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	out, _, err := doctor(dir, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	missing := map[string]bool{}
+	for _, d := range out {
+		if d.Reason == "faltando" {
+			missing[d.Path] = true
+		}
+	}
+	for _, want := range []string{"README.pt-BR.md", "CONTRIBUTING.pt-BR.md"} {
+		if !missing[want] {
+			t.Errorf("doctor did not report %s as missing: %+v", want, out)
 		}
 	}
 }
