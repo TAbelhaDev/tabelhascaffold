@@ -69,12 +69,8 @@ func setup(dir string, p project) error {
 	files := map[string]string{
 		filepath.Join(workflows, "ci.yml"): ciTmpl,
 	}
-	if !p.Lib {
-		releaseTmpl := releaseYAML
-		if p.web() {
-			releaseTmpl = releaseWebYAML
-		}
-		releaseYML, err := render(releaseTmpl, p)
+	if !p.Lib && !p.web() {
+		releaseYML, err := render(releaseYAML, p)
 		if err != nil {
 			return fmt.Errorf("release.yml: %w", err)
 		}

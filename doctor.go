@@ -50,12 +50,8 @@ func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 	}
 	check(filepath.Join(".github", "workflows", "ci.yml"), ciTmpl)
 
-	if !p.Lib {
-		releaseTmpl := releaseYAML
-		if p.web() {
-			releaseTmpl = releaseWebYAML
-		}
-		want, err := render(releaseTmpl, p)
+	if !p.Lib && !p.web() {
+		want, err := render(releaseYAML, p)
 		if err != nil {
 			return nil, nil, fmt.Errorf("release.yml: %w", err)
 		}
