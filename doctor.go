@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 )
 
 // drift is one divergence between a repo and the canonical scaffold.
@@ -27,6 +29,9 @@ func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 	if p.Org == "" {
 		p.Org = "TabelaDev"
 	}
+	if len(p.Categories) == 0 {
+		return nil, nil, fmt.Errorf("nenhuma categoria selecionada (%s)", strings.Join(validCategoryIDs(), ", "))
+	}
 
 	// Paths the repo declared as deliberately custom are neither compared nor
 	// reported — otherwise doctor stays red forever on a divergence that is the
@@ -44,41 +49,38 @@ func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 		out = append(out, compareFile(dir, rel, want)...)
 	}
 
-	ciTmpl := ciYAML
-	if p.web() {
-		ciTmpl = ciWebYAML
-	}
-	check(filepath.Join(".github", "workflows", "ci.yml"), ciTmpl)
-
-	if !p.Lib && !p.web() {
-		want, err := render(releaseYAML, p)
+	for _, c := range selectedCategories(p) {
+		cf, err := c.canonicalFiles(p)
 		if err != nil {
-			return nil, nil, fmt.Errorf("release.yml: %w", err)
+			return nil, nil, fmt.Errorf("%s: %w", c.id(), err)
 		}
-		check(filepath.Join(".github", "workflows", "release.yml"), want)
+		for _, rel := range sortedKeys(cf) {
+			check(rel, cf[rel])
+		}
+
+		// These are create-if-missing in setup, so drift here means "absent",
+		// not "different" — a project's own prose is allowed to diverge.
+		cm, err := c.createOnceFiles(p)
+		if err != nil {
+			return nil, nil, fmt.Errorf("%s: %w", c.id(), err)
+		}
+		for _, rel := range sortedKeys(cm) {
+			if ign.has(rel) {
+				continue
+			}
+			if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
+				out = append(out, drift{rel, "faltando"})
+			}
+		}
 	}
 
-	// These are create-if-missing in setup, so drift here means "absent", not
-	// "different" — a project's own prose is allowed to diverge.
-	for _, rel := range []string{
-		filepath.Join(".github", "ISSUE_TEMPLATE", "bug_report.yml"),
-		filepath.Join(".github", "ISSUE_TEMPLATE", "feature_request.yml"),
-		filepath.Join(".github", "ISSUE_TEMPLATE", "config.yml"),
-		filepath.Join(".github", "PULL_REQUEST_TEMPLATE.md"),
-		"CONTRIBUTING.md",
-		// The Portuguese halves of the bilingual pair. Reported as missing, never
-		// compared: a translation is prose and is allowed to diverge from the
-		// template, exactly like the English half.
-		"CONTRIBUTING.pt-BR.md",
-		"README.pt-BR.md",
-		"CHANGELOG.md",
-		"LICENSE",
-	} {
-		if ign.has(rel) {
-			continue
-		}
-		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
-			out = append(out, drift{rel, "faltando"})
+	// README.pt-BR.md is create-if-missing conceptually (a translation is
+	// prose, github doesn't scaffold it) but isn't one of github's
+	// createOnceFiles since tabelascaffold never creates it — only
+	// checkReadmeHeader below reports its absence when github is selected.
+	if p.hasCategory("github") && !ign.has("README.pt-BR.md") {
+		if _, err := os.Stat(filepath.Join(dir, "README.pt-BR.md")); os.IsNotExist(err) {
+			out = append(out, drift{"README.pt-BR.md", "faltando"})
 		}
 	}
 
@@ -127,6 +129,17 @@ func checkReadmeHeader(
 		*out = append(*out, drift{rel, "cabeçalho fora do padrão"})
 	}
 	return nil
+}
+
+// sortedKeys returns m's keys sorted, so drift reporting is deterministic
+// (map iteration order is not) within one category's file set.
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 // compareFile reports whether the repo's copy of rel matches the canonical

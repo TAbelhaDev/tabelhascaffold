@@ -33,11 +33,10 @@ func usage() {
 	fmt.Fprintln(os.Stderr, `uso: tabelascaffold <comando> [flags]
 
 comandos:
-  setup <dir>    injeta a estrutura open-source (CI, release, templates,
-                 CONTRIBUTING, LICENSE, CHANGELOG, badges do README) num repo
-  doctor <dir>   compara o repo com os templates canônicos e lista o que
-                 divergiu — não escreve nada; sai com código 1 se houver
-                 divergência
+  setup <dir>    injeta a estrutura das categorias selecionadas num repo
+  doctor <dir>   compara o repo com os templates canônicos das categorias
+                 selecionadas e lista o que divergiu — não escreve nada; sai
+                 com código 1 se houver divergência
   release <dir>  cria a tag git e empurra, deixando o workflow de release
                  gerar os binários e o GitHub release
 
@@ -46,35 +45,64 @@ setup/doctor flags:
   --title X    título humano pro CONTRIBUTING (padrão: derivado de --name)
   --org X      org/owner do repo (padrão: TabelaDev)
   --lib        projeto biblioteca (sem workflow de release de binário)
-  --stack X    stack do projeto: tui (Go/Bubble Tea, padrão) ou web
-               (SvelteKit/Cloudflare; CI Bun + release sem binário)
+  --github     categoria: estrutura open-source — LICENSE, CHANGELOG.md,
+               CONTRIBUTING (bilíngue), templates de issue/PR, badge de
+               licença AGPL-3.0 e botão ko-fi no README
+  --web        categoria: stack SvelteKit/Cloudflare — ci-web.yml (Bun,
+               inclui deploy e release), badges SvelteKit/Cloudflare/
+               tabelawebui
+  --tui        categoria: stack Go/Bubble Tea — ci.yml (Go) e release.yml
+               (binário, salvo com --lib), badges Go/Bubble Tea/tabelatuiui
+
+  categorias são independentes e combináveis (ex: --github --tui, ou
+  --web --tui, ou só --github pra um repo fechado que ainda quer CI). É
+  obrigatório escolher ao menos uma — não há mais padrão implícito.
 
 release flags:
   --version X  versão da tag (padrão: precisa ser informada)`)
 }
 
+// selectedCategoryFlags maps the boolean flags to category ids in registry
+// order, so project.Categories is always in the same order regardless of the
+// order the flags were typed in on the command line.
+func selectedCategoryFlags(github, web, tui bool) []string {
+	var cats []string
+	if tui {
+		cats = append(cats, "tui")
+	}
+	if web {
+		cats = append(cats, "web")
+	}
+	if github {
+		cats = append(cats, "github")
+	}
+	return cats
+}
+
 func runSetup(args []string) int {
 	fs := flag.NewFlagSet("setup", flag.ExitOnError)
-	var name, title, org, stack string
+	var name, title, org string
 	lib := fs.Bool("lib", false, "")
+	gh := fs.Bool("github", false, "")
+	web := fs.Bool("web", false, "")
+	tui := fs.Bool("tui", false, "")
 	fs.StringVar(&name, "name", "", "")
 	fs.StringVar(&title, "title", "", "")
 	fs.StringVar(&org, "org", "", "")
-	fs.StringVar(&stack, "stack", "tui", "")
 
 	dir, rest := splitArgs(args, map[string]bool{
 		"-name": true, "--name": true,
 		"-title": true, "--title": true,
 		"-org": true, "--org": true,
-		"-stack": true, "--stack": true,
 	})
 	fs.Parse(rest)
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
 	}
 
-	if stack != "tui" && stack != "web" {
-		fmt.Fprintf(os.Stderr, "erro: stack desconhecido %q (esperado tui ou web)\n", stack)
+	cats := selectedCategoryFlags(*gh, *web, *tui)
+	if len(cats) == 0 {
+		fmt.Fprintf(os.Stderr, "erro: selecione ao menos uma categoria (--github, --web, --tui)\n")
 		return 1
 	}
 
@@ -86,7 +114,18 @@ func runSetup(args []string) int {
 	if name == "" {
 		name = filepath.Base(abs)
 	}
-	p := project{Name: name, Title: title, Org: org, Lib: *lib, Stack: stack}
+	p := project{Name: name, Title: title, Org: org, Lib: *lib, Categories: cats}
+	// Defaulted here, once, so setup and applyBadges agree on Title/Org —
+	// setup defaults its own local copy internally, but applyBadges doesn't
+	// call setup, so it used to render badges (e.g. the go.mod URL) against
+	// an empty Org when --org was omitted, while doctor (which defaults
+	// internally too) expected the defaulted one and reported it as drift.
+	if p.Title == "" {
+		p.Title = humanizeTitle(p.Name)
+	}
+	if p.Org == "" {
+		p.Org = "TabelaDev"
+	}
 
 	if err := setup(abs, p); err != nil {
 		fmt.Fprintln(os.Stderr, "erro:", err)
@@ -95,8 +134,8 @@ func runSetup(args []string) int {
 	if err := applyBadges(abs, p); err != nil && !os.IsNotExist(err) {
 		fmt.Fprintln(os.Stderr, "aviso (README):", err)
 	}
-	fmt.Printf("tabelascaffold: estrutura open-source aplicada em %s\n", abs)
-	fmt.Printf("  nome=%s org=%s lib=%v stack=%s\n", p.Name, p.Org, p.Lib, p.Stack)
+	fmt.Printf("tabelascaffold: estrutura aplicada em %s\n", abs)
+	fmt.Printf("  nome=%s org=%s lib=%v categorias=%s\n", p.Name, p.Org, p.Lib, strings.Join(p.Categories, ","))
 	fmt.Println("  agora: tabelascaffold release . --version v0.1.0")
 	return 0
 }
@@ -105,26 +144,28 @@ func runSetup(args []string) int {
 // compare against them — but never writes.
 func runDoctor(args []string) int {
 	fs := flag.NewFlagSet("doctor", flag.ExitOnError)
-	var name, title, org, stack string
+	var name, title, org string
 	lib := fs.Bool("lib", false, "")
+	gh := fs.Bool("github", false, "")
+	web := fs.Bool("web", false, "")
+	tui := fs.Bool("tui", false, "")
 	fs.StringVar(&name, "name", "", "")
 	fs.StringVar(&title, "title", "", "")
 	fs.StringVar(&org, "org", "", "")
-	fs.StringVar(&stack, "stack", "tui", "")
 
 	dir, rest := splitArgs(args, map[string]bool{
 		"-name": true, "--name": true,
 		"-title": true, "--title": true,
 		"-org": true, "--org": true,
-		"-stack": true, "--stack": true,
 	})
 	fs.Parse(rest)
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
 	}
 
-	if stack != "tui" && stack != "web" {
-		fmt.Fprintf(os.Stderr, "erro: stack desconhecido %q (esperado tui ou web)\n", stack)
+	cats := selectedCategoryFlags(*gh, *web, *tui)
+	if len(cats) == 0 {
+		fmt.Fprintf(os.Stderr, "erro: selecione ao menos uma categoria (--github, --web, --tui)\n")
 		return 1
 	}
 
@@ -137,7 +178,7 @@ func runDoctor(args []string) int {
 		name = filepath.Base(abs)
 	}
 
-	drifts, ign, err := doctor(abs, project{Name: name, Title: title, Org: org, Lib: *lib, Stack: stack})
+	drifts, ign, err := doctor(abs, project{Name: name, Title: title, Org: org, Lib: *lib, Categories: cats})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "erro:", err)
 		return 1

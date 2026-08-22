@@ -20,9 +20,12 @@ type project struct {
 	Org string
 	// Lib marks a library project: no binary release workflow.
 	Lib bool
-	// Stack is the project stack: "" or "tui" for Go TUIs, "web" for
-	// SvelteKit/Cloudflare sites.
-	Stack string
+	// Categories are the selected scaffolding facets — any non-empty subset
+	// of the registered category ids ("github", "web", "tui", and, in
+	// future, "os"); see allCategories in category.go. Categories are
+	// independently selectable, not mutually exclusive, and there is no
+	// default — at least one must be chosen by the caller.
+	Categories []string
 	// Lang is which half of a bilingual doc is being rendered: "" for English —
 	// the canonical one, since it is what GitHub renders — or langPtBR. Only the
 	// README/CONTRIBUTING pair is bilingual; see the Language section of
@@ -34,8 +37,15 @@ type project struct {
 // filename carries.
 const langPtBR = "pt-BR"
 
-// web reports whether the project uses the web scaffolding.
-func (p project) web() bool { return p.Stack == "web" }
+// hasCategory reports whether id is among p.Categories.
+func (p project) hasCategory(id string) bool {
+	for _, c := range p.Categories {
+		if c == id {
+			return true
+		}
+	}
+	return false
+}
 
 // setup writes the open-source scaffolding into dir (which must exist and be
 // a git repo, or be an empty dir). It is idempotent: the CI/release
@@ -53,69 +63,54 @@ func setup(dir string, p project) error {
 	if p.Org == "" {
 		p.Org = "TabelaDev"
 	}
+	if len(p.Categories) == 0 {
+		return fmt.Errorf("nenhuma categoria selecionada (%s)", strings.Join(validCategoryIDs(), ", "))
+	}
 
-	workflows := filepath.Join(dir, ".github", "workflows")
-	issues := filepath.Join(dir, ".github", "ISSUE_TEMPLATE")
-	for _, d := range []string{workflows, issues} {
-		if err := os.MkdirAll(d, 0o755); err != nil {
+	files := map[string]string{}
+	createIfMissing := map[string]string{}
+	for _, c := range selectedCategories(p) {
+		cf, err := c.canonicalFiles(p)
+		if err != nil {
+			return fmt.Errorf("%s: %w", c.id(), err)
+		}
+		for rel, content := range cf {
+			files[rel] = content
+		}
+		cm, err := c.createOnceFiles(p)
+		if err != nil {
+			return fmt.Errorf("%s: %w", c.id(), err)
+		}
+		for rel, content := range cm {
+			createIfMissing[rel] = content
+		}
+	}
+
+	// Directories are derived from the file paths the selected categories
+	// declared, not hardcoded — a category that writes only to the repo root
+	// (github's LICENSE, CONTRIBUTING.md) needs no subdirectory created at all.
+	dirsNeeded := map[string]bool{}
+	for rel := range files {
+		dirsNeeded[filepath.Dir(rel)] = true
+	}
+	for rel := range createIfMissing {
+		dirsNeeded[filepath.Dir(rel)] = true
+	}
+	for d := range dirsNeeded {
+		if d == "." {
+			continue
+		}
+		if err := os.MkdirAll(filepath.Join(dir, d), 0o755); err != nil {
 			return err
 		}
 	}
 
-	ciTmpl := ciYAML
-	if p.web() {
-		ciTmpl = ciWebYAML
-	}
-	files := map[string]string{
-		filepath.Join(workflows, "ci.yml"): ciTmpl,
-	}
-	if !p.Lib && !p.web() {
-		releaseYML, err := render(releaseYAML, p)
-		if err != nil {
-			return fmt.Errorf("release.yml: %w", err)
-		}
-		files[filepath.Join(workflows, "release.yml")] = releaseYML
-	}
-
-	bugReport, err := render(bugReportYAML, p)
-	if err != nil {
-		return fmt.Errorf("bug_report.yml: %w", err)
-	}
-	featureRequest, err := render(featureRequestYAML, p)
-	if err != nil {
-		return fmt.Errorf("feature_request.yml: %w", err)
-	}
-	contributing, err := render(contributingMD, p)
-	if err != nil {
-		return fmt.Errorf("CONTRIBUTING.md: %w", err)
-	}
-	// The Portuguese half is rendered from the same project shape, only with the
-	// language marker flipped, so the two halves cannot disagree about the
-	// stack-specific commands they tell a contributor to run.
-	ptBR := p
-	ptBR.Lang = langPtBR
-	contributingPtBr, err := render(contributingPtBrMD, ptBR)
-	if err != nil {
-		return fmt.Errorf("CONTRIBUTING.pt-BR.md: %w", err)
-	}
-
 	// The remaining scaffold files are only created when missing, so an
 	// existing project's custom prose (language, specifics) and history
-	// aren't clobbered by a re-run. New projects get the canonical (PT-BR)
-	// versions.
-	createIfMissing := map[string]string{
-		filepath.Join(issues, "bug_report.yml"):                   bugReport,
-		filepath.Join(issues, "feature_request.yml"):              featureRequest,
-		filepath.Join(issues, "config.yml"):                       issueConfigYAML,
-		filepath.Join(dir, ".github", "PULL_REQUEST_TEMPLATE.md"): prTemplateMD,
-		filepath.Join(dir, "CONTRIBUTING.md"):                     contributing,
-		filepath.Join(dir, "CONTRIBUTING.pt-BR.md"):               contributingPtBr,
-		filepath.Join(dir, "CHANGELOG.md"):                        changelogMD,
-		filepath.Join(dir, "LICENSE"):                             agplLicense,
-	}
-	for path, content := range createIfMissing {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			files[path] = content
+	// aren't clobbered by a re-run.
+	for rel, content := range createIfMissing {
+		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
+			files[rel] = content
 		}
 	}
 
@@ -127,11 +122,11 @@ func setup(dir string, p project) error {
 		return fmt.Errorf("%s: %w", ignoreFile, err)
 	}
 
-	for path, content := range files {
-		if ign.hasAbs(dir, path) {
+	for rel, content := range files {
+		if ign.has(rel) {
 			continue
 		}
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, rel), []byte(content), 0o644); err != nil {
 			return err
 		}
 	}

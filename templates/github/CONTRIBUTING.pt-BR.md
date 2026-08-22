@@ -13,11 +13,8 @@ Abra uma [issue](../../issues/new/choose) usando o template apropriado.
 
 1. Fork o repositório.
 2. Crie uma branch a partir de `main`.
-{{if eq .Stack "web"}}3. Rode `bun run check`, `bun run lint`, `bun run test` e `bun run build`
-   localmente antes de abrir o PR.
-{{else}}3. Rode `go vet ./...`, `go test ./...` e `go build ./...` localmente antes
-   de abrir o PR.
-{{end}}4. Abra o PR usando o template — descreva o quê e o porquê da mudança.
+3. {{.BuildTestStep}}
+4. Abra o PR usando o template — descreva o quê e o porquê da mudança.
 
 ## Idioma
 

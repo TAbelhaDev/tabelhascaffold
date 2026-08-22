@@ -19,31 +19,27 @@ var (
 	langLine = regexp.MustCompile(`\[(English|Português)\]\(README(\.pt-BR)?\.md\)`)
 )
 
-// techBadges returns the badge lines proper for the project stack — license
-// + tech tags for the header; ko-fi is handled separately by headerBlock.
-func techBadges(p project) []string {
-	switch {
-	case p.web():
-		b := []string{
-			"[![SvelteKit](https://img.shields.io/badge/SvelteKit-Svelte-ff3e00?style=flat-square&logo=svelte&logoColor=white)](https://kit.svelte.dev)",
-			"[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange?style=flat-square&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)",
-			"[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)",
-		}
-		if !p.Lib {
-			b = append(b, "[![Built with tabelawebui](https://img.shields.io/badge/theme-tabelawebui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelawebui)")
-		}
-		return b
-	default:
-		b := []string{
-			"[![Go Version](https://img.shields.io/github/go-mod/go-version/" + p.Org + "/" + p.Name + "?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)",
-			"[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)",
-			"[![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)",
-		}
-		if !p.Lib {
-			b = append(b, "[![Powered by tabelatuiui](https://img.shields.io/badge/theme-tabelatuiui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelatuiui)")
-		}
-		return b
+// collectBadges assembles the main badge block from every selected category,
+// in registry order (allCategories) — stack categories' tech/theme badges
+// first, github's license badge last.
+func collectBadges(p project) []string {
+	var out []string
+	for _, c := range selectedCategories(p) {
+		out = append(out, c.badges(p)...)
 	}
+	return out
+}
+
+// collectFooter joins every selected category's footer badge (currently only
+// github's ko-fi button) into the paragraph rendered below the main block.
+func collectFooter(p project) string {
+	var lines []string
+	for _, c := range selectedCategories(p) {
+		if f := c.footer(p); f != "" {
+			lines = append(lines, f)
+		}
+	}
+	return strings.Join(lines, "\n\n")
 }
 
 const kofi = "[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)"
@@ -70,8 +66,10 @@ func headerBlock(title, tagline string, p project) string {
 		b.WriteString("\n" + tagline + "\n")
 	}
 	b.WriteString("\n" + langSwitch(p) + "\n")
-	b.WriteString("\n" + strings.Join(techBadges(p), "\n"))
-	b.WriteString("\n\n" + kofi)
+	b.WriteString("\n" + strings.Join(collectBadges(p), "\n"))
+	if footer := collectFooter(p); footer != "" {
+		b.WriteString("\n\n" + footer)
+	}
 	b.WriteString("\n\n</div>")
 	return b.String()
 }

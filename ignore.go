@@ -51,15 +51,6 @@ func (s ignoreSet) has(rel string) bool {
 	return s[filepath.Clean(rel)]
 }
 
-// hasAbs is has() for a path under dir, for callers holding absolute paths.
-func (s ignoreSet) hasAbs(dir, path string) bool {
-	rel, err := filepath.Rel(dir, path)
-	if err != nil {
-		return false
-	}
-	return s.has(rel)
-}
-
 // sorted returns the exempt paths in a stable order, for reporting.
 func (s ignoreSet) sorted() []string {
 	out := make([]string, 0, len(s))
