@@ -32,21 +32,22 @@ new repo starts with the same skeleton as the mature ones.
 go install github.com/ianptkcs/tabelascaffold@latest
 ```
 
-Or building from source:
+That installs the binary as `tabelascaffold` (matching the module name). To get the short
+`tscaf` name used throughout this README, build from source instead:
 
 ```bash
 git clone https://github.com/TabelaDev/tabelascaffold.git
 cd tabelascaffold
-go build -o tabelascaffold .
+go build -o tscaf .
 ```
 
 ## Usage
 
 ```bash
-tabelascaffold setup . --name myapp --org TabelaDev
-tabelascaffold setup . --name my-lib --org TabelaDev --lib   # no binary release
-tabelascaffold doctor . --name myapp --org TabelaDev         # what drifted (writes nothing)
-tabelascaffold release . --version v0.1.0                    # tag + push (workflow builds the release)
+tscaf setup . --name myapp --org TabelaDev
+tscaf setup . --name my-lib --org TabelaDev --lib   # no binary release
+tscaf doctor . --name myapp --org TabelaDev         # what drifted (writes nothing)
+tscaf release . --version v0.1.0                    # tag + push (workflow builds the release)
 ```
 
 What `setup` creates:

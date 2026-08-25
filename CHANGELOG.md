@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-08-25
+
+### Changed
+
+- Renamed the installed binary from `tabelascaffold` to `tscaf`. Usage/help
+  text, the release artifacts and the README updated to match.
+
 ## [0.5.0] — 2026-08-11
 
 > From this entry on the changelog is written in English, per the language

@@ -32,21 +32,22 @@ de Go/Licença). Um repo novo começa com o mesmo esqueleto dos maduros.
 go install github.com/ianptkcs/tabelascaffold@latest
 ```
 
-Ou compilando a partir do source:
+Isso instala o binário como `tabelascaffold` (nome do módulo). Pra ter o nome curto
+`tscaf` usado no resto deste README, compile a partir do source:
 
 ```bash
 git clone https://github.com/TabelaDev/tabelascaffold.git
 cd tabelascaffold
-go build -o tabelascaffold .
+go build -o tscaf .
 ```
 
 ## Uso
 
 ```bash
-tabelascaffold setup . --name meuapp --org TabelaDev
-tabelascaffold setup . --name minha-lib --org TabelaDev --lib   # sem release de binário
-tabelascaffold doctor . --name meuapp --org TabelaDev           # o que divergiu (não escreve nada)
-tabelascaffold release . --version v0.1.0                       # tag + push (workflow gera o release)
+tscaf setup . --name meuapp --org TabelaDev
+tscaf setup . --name minha-lib --org TabelaDev --lib   # sem release de binário
+tscaf doctor . --name meuapp --org TabelaDev           # o que divergiu (não escreve nada)
+tscaf release . --version v0.1.0                       # tag + push (workflow gera o release)
 ```
 
 O que `setup` cria:

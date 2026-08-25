@@ -30,7 +30,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, `uso: tabelascaffold <comando> [flags]
+	fmt.Fprintln(os.Stderr, `uso: tscaf <comando> [flags]
 
 comandos:
   setup <dir>    injeta a estrutura das categorias selecionadas num repo
@@ -136,7 +136,7 @@ func runSetup(args []string) int {
 	}
 	fmt.Printf("tabelascaffold: estrutura aplicada em %s\n", abs)
 	fmt.Printf("  nome=%s org=%s lib=%v categorias=%s\n", p.Name, p.Org, p.Lib, strings.Join(p.Categories, ","))
-	fmt.Println("  agora: tabelascaffold release . --version v0.1.0")
+	fmt.Println("  agora: tscaf release . --version v0.1.0")
 	return 0
 }
 
