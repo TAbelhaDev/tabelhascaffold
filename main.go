@@ -52,7 +52,10 @@ setup/doctor flags:
                inclui deploy e release), badges SvelteKit/Cloudflare/
                tabelawebui
   --tui        categoria: stack Go/Bubble Tea — ci.yml (Go) e release.yml
-               (binário, salvo com --lib), badges Go/Bubble Tea/tabelatuiui
+                (binário, salvo com --lib), badges Go/Bubble Tea/tabelatuiui
+  --pyscript   categoria: stack Python (uv) — ci.yml (uv sync, ruff,
+                basedpyright, ty, typos, vulture, pytest) e release.yml
+                (uv build), badges Python/uv
 
   categorias são independentes e combináveis (ex: --github --tui, ou
   --web --tui, ou só --github pra um repo fechado que ainda quer CI). É
@@ -65,13 +68,16 @@ release flags:
 // selectedCategoryFlags maps the boolean flags to category ids in registry
 // order, so project.Categories is always in the same order regardless of the
 // order the flags were typed in on the command line.
-func selectedCategoryFlags(github, web, tui bool) []string {
+func selectedCategoryFlags(github, web, tui, pyscript bool) []string {
 	var cats []string
 	if tui {
 		cats = append(cats, "tui")
 	}
 	if web {
 		cats = append(cats, "web")
+	}
+	if pyscript {
+		cats = append(cats, "pyscript")
 	}
 	if github {
 		cats = append(cats, "github")
@@ -86,6 +92,7 @@ func runSetup(args []string) int {
 	gh := fs.Bool("github", false, "")
 	web := fs.Bool("web", false, "")
 	tui := fs.Bool("tui", false, "")
+	ps := fs.Bool("pyscript", false, "")
 	fs.StringVar(&name, "name", "", "")
 	fs.StringVar(&title, "title", "", "")
 	fs.StringVar(&org, "org", "", "")
@@ -100,9 +107,9 @@ func runSetup(args []string) int {
 		dir = fs.Arg(0)
 	}
 
-	cats := selectedCategoryFlags(*gh, *web, *tui)
+	cats := selectedCategoryFlags(*gh, *web, *tui, *ps)
 	if len(cats) == 0 {
-		fmt.Fprintf(os.Stderr, "erro: selecione ao menos uma categoria (--github, --web, --tui)\n")
+		fmt.Fprintf(os.Stderr, "erro: selecione ao menos uma categoria (--github, --web, --tui, --pyscript)\n")
 		return 1
 	}
 
@@ -149,6 +156,7 @@ func runDoctor(args []string) int {
 	gh := fs.Bool("github", false, "")
 	web := fs.Bool("web", false, "")
 	tui := fs.Bool("tui", false, "")
+	ps := fs.Bool("pyscript", false, "")
 	fs.StringVar(&name, "name", "", "")
 	fs.StringVar(&title, "title", "", "")
 	fs.StringVar(&org, "org", "", "")
@@ -163,9 +171,9 @@ func runDoctor(args []string) int {
 		dir = fs.Arg(0)
 	}
 
-	cats := selectedCategoryFlags(*gh, *web, *tui)
+	cats := selectedCategoryFlags(*gh, *web, *tui, *ps)
 	if len(cats) == 0 {
-		fmt.Fprintf(os.Stderr, "erro: selecione ao menos uma categoria (--github, --web, --tui)\n")
+		fmt.Fprintf(os.Stderr, "erro: selecione ao menos uma categoria (--github, --web, --tui, --pyscript)\n")
 		return 1
 	}
 

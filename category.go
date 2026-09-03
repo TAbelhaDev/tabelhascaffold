@@ -48,6 +48,7 @@ type category interface {
 var allCategories = []category{
 	tuiCategory{},
 	webCategory{},
+	pyscriptCategory{},
 	githubCategory{},
 }
 

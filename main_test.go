@@ -45,10 +45,10 @@ func TestHumanizeTitle(t *testing.T) {
 }
 
 func TestSelectedCategoryFlags(t *testing.T) {
-	if got := selectedCategoryFlags(true, false, true); len(got) != 2 || got[0] != "tui" || got[1] != "github" {
+	if got := selectedCategoryFlags(true, false, true, false); len(got) != 2 || got[0] != "tui" || got[1] != "github" {
 		t.Fatalf("selectedCategoryFlags(true,false,true) = %v, want [tui github]", got)
 	}
-	if got := selectedCategoryFlags(false, false, false); len(got) != 0 {
+	if got := selectedCategoryFlags(false, false, false, false); len(got) != 0 {
 		t.Fatalf("selectedCategoryFlags(false,false,false) = %v, want empty", got)
 	}
 }

@@ -1,0 +1,56 @@
+[project]
+name = "{{.Name}}"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "basedpyright",
+    "ruff",
+    "ty",
+    "typos",
+    "vulture",
+    "pytest",
+    "pytest-cov",
+    "hypothesis",
+    "pip-audit",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["bin", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "SIM", # simplification
+    "C4",  # comprehensions
+    "PIE", # misc improvements
+    "PTH", # pathlib
+    "RET", # return-value issues
+    "RUF", # Ruff-specific rules
+]
+ignore = ["E501"]
+
+[tool.basedpyright]
+typeCheckingMode = "standard"
+extraPaths = ["bin", "src"]
+
+[tool.ty]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["bin"]
