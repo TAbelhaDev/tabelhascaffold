@@ -27,7 +27,7 @@ func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 		p.Title = humanizeTitle(p.Name)
 	}
 	if p.Org == "" {
-		p.Org = "TabelaDev"
+		p.Org = "TAbelhaDev"
 	}
 	if len(p.Categories) == 0 {
 		return nil, nil, fmt.Errorf("nenhuma categoria selecionada (%s)", strings.Join(validCategoryIDs(), ", "))
@@ -35,7 +35,7 @@ func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 
 	// Paths the repo declared as deliberately custom are neither compared nor
 	// reported — otherwise doctor stays red forever on a divergence that is the
-	// whole point (tabelawebui's npm release workflow).
+	// whole point (tabelhawebui's npm release workflow).
 	ign, err := loadIgnore(dir)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", ignoreFile, err)
@@ -76,7 +76,7 @@ func doctor(dir string, p project) ([]drift, ignoreSet, error) {
 
 	// README.pt-BR.md is create-if-missing conceptually (a translation is
 	// prose, github doesn't scaffold it) but isn't one of github's
-	// createOnceFiles since tabelascaffold never creates it — only
+	// createOnceFiles since tabelhascaffold never creates it — only
 	// checkReadmeHeader below reports its absence when github is selected.
 	if p.hasCategory("github") && !ign.has("README.pt-BR.md") {
 		if _, err := os.Stat(filepath.Join(dir, "README.pt-BR.md")); os.IsNotExist(err) {

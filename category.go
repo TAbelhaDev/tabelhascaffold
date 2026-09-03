@@ -39,7 +39,7 @@ type category interface {
 	buildTestLabel(p project) string
 }
 
-// allCategories is the registry of every category tabelascaffold knows, in
+// allCategories is the registry of every category tabelhascaffold knows, in
 // the fixed order that decides badge and CONTRIBUTING precedence when more
 // than one is selected (stack categories first, github's license+ko-fi
 // last). Adding an "os" category later is one new file (os.go) implementing
@@ -76,7 +76,7 @@ func selectedCategories(p project) []category {
 // BuildTestStep composes CONTRIBUTING's step-3 sentence from the stack
 // categories selected on p:
 //   - zero contributing categories (github alone, or no stack categories):
-//     a generic placeholder — tabelascaffold has no commands to prescribe.
+//     a generic placeholder — tabelhascaffold has no commands to prescribe.
 //   - exactly one: "Run <commands> locally before opening the PR."
 //   - two or more: an intro line plus one bullet per contributing category,
 //     in registry order, so a multi-stack repo (e.g. web+tui) gets both sets

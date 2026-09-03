@@ -32,7 +32,7 @@ func (webCategory) badges(p project) []string {
 		"[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange?style=flat-square&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)",
 	}
 	if !p.Lib {
-		b = append(b, "[![Built with tabelawebui](https://img.shields.io/badge/theme-tabelawebui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelawebui)")
+		b = append(b, "[![Built with tabelhawebui](https://img.shields.io/badge/theme-tabelhawebui-d6b4f7?style=flat-square)](https://github.com/TAbelhaDev/tabelhawebui)")
 	}
 	return b
 }

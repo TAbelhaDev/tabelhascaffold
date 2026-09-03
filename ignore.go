@@ -13,10 +13,10 @@ import (
 //
 // setup rewrites the CI and release workflows unconditionally, which is right
 // for a repo that follows the canonical scaffold and wrong for one that
-// deliberately diverges: tabelawebui's release.yml publishes to npm and would
+// deliberately diverges: tabelhawebui's release.yml publishes to npm and would
 // be replaced by the generic notes-only workflow on the next run. Listing it
 // here keeps setup off it and stops doctor from reporting it as drift forever.
-const ignoreFile = ".tabelascaffoldignore"
+const ignoreFile = ".tabelhascaffoldignore"
 
 // ignoreSet holds the repo-relative paths setup must not write and doctor must
 // not flag.

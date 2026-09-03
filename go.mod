@@ -1,3 +1,3 @@
-module github.com/ianptkcs/tabelascaffold
+module github.com/TAbelhaDev/tabelhascaffold
 
 go 1.26.1

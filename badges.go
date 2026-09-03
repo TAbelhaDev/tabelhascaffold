@@ -231,7 +231,7 @@ func headerLimit(lines []string) int {
 }
 
 // applyBadges normalizes the README header of dir in place, unless the repo
-// opted the README out in .tabelascaffoldignore.
+// opted the README out in .tabelhascaffoldignore.
 //
 // Both halves of the bilingual pair are normalized: README.md always, and
 // README.pt-BR.md when it exists. The Portuguese half is not created here — a

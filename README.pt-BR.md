@@ -1,16 +1,16 @@
 <div align="center">
 
-# tabelascaffold
+# tabelhascaffold
 
 **Injeta a estrutura open-source (CI, release, templates, CONTRIBUTING,
 LICENSE, CHANGELOG, badges) num projeto Go Bubble Tea novo.**
 
 [English](README.md) · **Português**
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/TabelaDev/tabelascaffold?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/TAbelhaDev/tabelhascaffold?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
 [![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)
-[![Powered by tabelatuiui](https://img.shields.io/badge/theme-tabelatuiui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelatuiui)
+[![Powered by tabelhatuiui](https://img.shields.io/badge/theme-tabelhatuiui-d6b4f7?style=flat-square)](https://github.com/TAbelhaDev/tabelhatuiui)
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)
 
@@ -29,24 +29,24 @@ de Go/Licença). Um repo novo começa com o mesmo esqueleto dos maduros.
 ## Instalação
 
 ```bash
-go install github.com/ianptkcs/tabelascaffold@latest
+go install github.com/TAbelhaDev/tabelhascaffold@latest
 ```
 
-Isso instala o binário como `tabelascaffold` (nome do módulo). Pra ter o nome curto
+Isso instala o binário como `tabelhascaffold` (nome do módulo). Pra ter o nome curto
 `tscaf` usado no resto deste README, compile a partir do source:
 
 ```bash
-git clone https://github.com/TabelaDev/tabelascaffold.git
-cd tabelascaffold
+git clone https://github.com/TAbelhaDev/tabelhascaffold.git
+cd tabelhascaffold
 go build -o tscaf .
 ```
 
 ## Uso
 
 ```bash
-tscaf setup . --name meuapp --org TabelaDev
-tscaf setup . --name minha-lib --org TabelaDev --lib   # sem release de binário
-tscaf doctor . --name meuapp --org TabelaDev           # o que divergiu (não escreve nada)
+tscaf setup . --name meuapp --org TAbelhaDev
+tscaf setup . --name minha-lib --org TAbelhaDev --lib   # sem release de binário
+tscaf doctor . --name meuapp --org TAbelhaDev           # o que divergiu (não escreve nada)
 tscaf release . --version v0.1.0                       # tag + push (workflow gera o release)
 ```
 
@@ -74,8 +74,8 @@ divergência — dá pra usar como checagem em CI. Não escreve nada.
 
 ### Divergência de propósito
 
-Nem toda diferença é dívida. O `tabelawebui` publica no npm, então o
-`release.yml` dele **não** pode ser o genérico. Um `.tabelascaffoldignore` na
+Nem toda diferença é dívida. O `tabelhawebui` publica no npm, então o
+`release.yml` dele **não** pode ser o genérico. Um `.tabelhascaffoldignore` na
 raiz do repo lista os caminhos que o `setup` não sobrescreve e que o `doctor`
 não reporta:
 
@@ -115,7 +115,7 @@ metade faltando, e normaliza o cabeçalho das duas depois que existirem.
   criados apenas quando não existem, então um projeto com templates
   customizados ou histórico não é sobrescrito.
 - **Badges no lugar certo** — o bloco de badges (Go Version, License, Bubble
-  Tea, tabelatuiui) fica na primeira linha e o ko-fi na linha de baixo,
+  Tea, tabelhatuiui) fica na primeira linha e o ko-fi na linha de baixo,
   sempre.
 
 ## Quem usa
@@ -123,12 +123,12 @@ metade faltando, e normaliza o cabeçalho das duas depois que existirem.
 | Projeto | Lib? | De onde veio |
 |---|---|---|
 | [djobs](https://github.com/ianptkcs/dankjobs) | app | já canônico (fonte do padrão) |
-| [tabelaradar](https://github.com/TabelaDev/tabelaradar) | app | unificado |
-| [tabelakanban](https://github.com/TabelaDev/tabelakanban) | app | unificado |
-| [tabelatuiui](https://github.com/TabelaDev/tabelatuiui) | lib | unificado |
+| [tabelharadar](https://github.com/TAbelhaDev/tabelharadar) | app | unificado |
+| [tabelakanban](https://github.com/TAbelhaDev/tabelakanban) | app | unificado |
+| [tabelhatuiui](https://github.com/TAbelhaDev/tabelhatuiui) | lib | unificado |
 
 O chrome das TUIs em si (tema, panels, helpers de IPC) vem da
-[`tabelatuiui`](https://github.com/TabelaDev/tabelatuiui).
+[`tabelhatuiui`](https://github.com/TAbelhaDev/tabelhatuiui).
 
 ## Desenvolvimento
 

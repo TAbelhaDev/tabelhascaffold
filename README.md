@@ -1,16 +1,16 @@
 <div align="center">
 
-# tabelascaffold
+# tabelhascaffold
 
 **Injects the open-source structure (CI, release, templates, CONTRIBUTING,
 LICENSE, CHANGELOG, badges) into a new Go Bubble Tea project.**
 
 **English** · [Português](README.pt-BR.md)
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/TabelaDev/tabelascaffold?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/TAbelhaDev/tabelhascaffold?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
 [![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)
-[![Powered by tabelatuiui](https://img.shields.io/badge/theme-tabelatuiui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelatuiui)
+[![Powered by tabelhatuiui](https://img.shields.io/badge/theme-tabelhatuiui-d6b4f7?style=flat-square)](https://github.com/TAbelhaDev/tabelhatuiui)
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)
 
@@ -29,24 +29,24 @@ new repo starts with the same skeleton as the mature ones.
 ## Installation
 
 ```bash
-go install github.com/ianptkcs/tabelascaffold@latest
+go install github.com/TAbelhaDev/tabelhascaffold@latest
 ```
 
-That installs the binary as `tabelascaffold` (matching the module name). To get the short
+That installs the binary as `tabelhascaffold` (matching the module name). To get the short
 `tscaf` name used throughout this README, build from source instead:
 
 ```bash
-git clone https://github.com/TabelaDev/tabelascaffold.git
-cd tabelascaffold
+git clone https://github.com/TAbelhaDev/tabelhascaffold.git
+cd tabelhascaffold
 go build -o tscaf .
 ```
 
 ## Usage
 
 ```bash
-tscaf setup . --name myapp --org TabelaDev
-tscaf setup . --name my-lib --org TabelaDev --lib   # no binary release
-tscaf doctor . --name myapp --org TabelaDev         # what drifted (writes nothing)
+tscaf setup . --name myapp --org TAbelhaDev
+tscaf setup . --name my-lib --org TAbelhaDev --lib   # no binary release
+tscaf doctor . --name myapp --org TAbelhaDev         # what drifted (writes nothing)
 tscaf release . --version v0.1.0                    # tag + push (workflow builds the release)
 ```
 
@@ -74,8 +74,8 @@ it works as a CI check. It writes nothing.
 
 ### Deliberate divergence
 
-Not every difference is debt. `tabelawebui` publishes to npm, so its
-`release.yml` **cannot** be the generic one. A `.tabelascaffoldignore` at the
+Not every difference is debt. `tabelhawebui` publishes to npm, so its
+`release.yml` **cannot** be the generic one. A `.tabelhascaffoldignore` at the
 repo root lists the paths `setup` will not overwrite and `doctor` will not
 report:
 
@@ -117,19 +117,19 @@ exist.
   only created when absent, so a project with customized templates or history is
   never clobbered.
 - **Badges in the right place** — the badge block (Go Version, License, Bubble
-  Tea, tabelatuiui) sits on the first line and ko-fi on the line below, always.
+  Tea, tabelhatuiui) sits on the first line and ko-fi on the line below, always.
 
 ## Who uses it
 
 | Project | Lib? | Origin |
 |---|---|---|
 | [djobs](https://github.com/ianptkcs/dankjobs) | app | already canonical (source of the pattern) |
-| [tabelaradar](https://github.com/TabelaDev/tabelaradar) | app | unified |
-| [tabelakanban](https://github.com/TabelaDev/tabelakanban) | app | unified |
-| [tabelatuiui](https://github.com/TabelaDev/tabelatuiui) | lib | unified |
+| [tabelharadar](https://github.com/TAbelhaDev/tabelharadar) | app | unified |
+| [tabelakanban](https://github.com/TAbelhaDev/tabelakanban) | app | unified |
+| [tabelhatuiui](https://github.com/TAbelhaDev/tabelhatuiui) | lib | unified |
 
 The TUI chrome itself (theme, panels, IPC helpers) comes from
-[`tabelatuiui`](https://github.com/TabelaDev/tabelatuiui).
+[`tabelhatuiui`](https://github.com/TAbelhaDev/tabelhatuiui).
 
 ## Development
 

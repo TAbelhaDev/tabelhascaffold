@@ -43,16 +43,16 @@ comandos:
 setup/doctor flags:
   --name X     nome do binário/módulo (padrão: basename do dir)
   --title X    título humano pro CONTRIBUTING (padrão: derivado de --name)
-  --org X      org/owner do repo (padrão: TabelaDev)
+  --org X      org/owner do repo (padrão: TAbelhaDev)
   --lib        projeto biblioteca (sem workflow de release de binário)
   --github     categoria: estrutura open-source — LICENSE, CHANGELOG.md,
                CONTRIBUTING (bilíngue), templates de issue/PR, badge de
                licença AGPL-3.0 e botão ko-fi no README
   --web        categoria: stack SvelteKit/Cloudflare — ci-web.yml (Bun,
                inclui deploy e release), badges SvelteKit/Cloudflare/
-               tabelawebui
+               tabelhawebui
   --tui        categoria: stack Go/Bubble Tea — ci.yml (Go) e release.yml
-                (binário, salvo com --lib), badges Go/Bubble Tea/tabelatuiui
+                (binário, salvo com --lib), badges Go/Bubble Tea/tabelhatuiui
   --pyscript   categoria: stack Python (uv) — ci.yml (uv sync, ruff,
                 basedpyright, ty, typos, vulture, pytest) e release.yml
                 (uv build), badges Python/uv
@@ -131,7 +131,7 @@ func runSetup(args []string) int {
 		p.Title = humanizeTitle(p.Name)
 	}
 	if p.Org == "" {
-		p.Org = "TabelaDev"
+		p.Org = "TAbelhaDev"
 	}
 
 	if err := setup(abs, p); err != nil {
@@ -141,7 +141,7 @@ func runSetup(args []string) int {
 	if err := applyBadges(abs, p); err != nil && !os.IsNotExist(err) {
 		fmt.Fprintln(os.Stderr, "aviso (README):", err)
 	}
-	fmt.Printf("tabelascaffold: estrutura aplicada em %s\n", abs)
+	fmt.Printf("tabelhascaffold: estrutura aplicada em %s\n", abs)
 	fmt.Printf("  nome=%s org=%s lib=%v categorias=%s\n", p.Name, p.Org, p.Lib, strings.Join(p.Categories, ","))
 	fmt.Println("  agora: tscaf release . --version v0.1.0")
 	return 0
@@ -193,9 +193,9 @@ func runDoctor(args []string) int {
 	}
 
 	if len(drifts) == 0 {
-		fmt.Printf("tabelascaffold: %s está alinhado com os templates canônicos\n", abs)
+		fmt.Printf("tabelhascaffold: %s está alinhado com os templates canônicos\n", abs)
 	} else {
-		fmt.Printf("tabelascaffold: %d divergência(s) em %s\n", len(drifts), abs)
+		fmt.Printf("tabelhascaffold: %d divergência(s) em %s\n", len(drifts), abs)
 		for _, d := range drifts {
 			fmt.Printf("  %-42s %s\n", d.Path, d.Reason)
 		}
@@ -215,7 +215,7 @@ func runRelease(args []string) int {
 	dir, rest := splitArgs(args, map[string]bool{"-version": true, "--version": true})
 	fs.Parse(rest)
 	if *version == "" {
-		fmt.Fprintln(os.Stderr, "tabelascaffold: --version é obrigatório (ex: --version v0.2.0)")
+		fmt.Fprintln(os.Stderr, "tabelhascaffold: --version é obrigatório (ex: --version v0.2.0)")
 		return 1
 	}
 	if fs.NArg() > 0 {
@@ -230,7 +230,7 @@ func runRelease(args []string) int {
 		fmt.Fprintln(os.Stderr, "erro:", err)
 		return 1
 	}
-	fmt.Printf("tabelascaffold: tag %s criada e empurrada\n", *version)
+	fmt.Printf("tabelhascaffold: tag %s criada e empurrada\n", *version)
 	return 0
 }
 

@@ -33,7 +33,7 @@ func TestHumanizeTitle(t *testing.T) {
 	cases := map[string]string{
 		"tabelakanban": "Tabelakanban",
 		"djobs":        "Djobs",
-		"tabelatuiui":  "Tabelatuiui",
+		"tabelhatuiui":  "Tabelatuiui",
 		"my-cool-tool": "MyCoolTool",
 		"my_tool":      "MyTool",
 	}
@@ -117,7 +117,7 @@ func TestDoctorNoCategories(t *testing.T) {
 
 func TestGithubCategoryAlone(t *testing.T) {
 	dir := t.TempDir()
-	if err := setup(dir, project{Name: "myapp", Org: "TabelaDev", Categories: []string{"github"}}); err != nil {
+	if err := setup(dir, project{Name: "myapp", Org: "TAbelhaDev", Categories: []string{"github"}}); err != nil {
 		t.Fatal(err)
 	}
 	for _, rel := range []string{
@@ -136,7 +136,7 @@ func TestGithubCategoryAlone(t *testing.T) {
 
 func TestTuiCategoryWithoutGithub(t *testing.T) {
 	dir := t.TempDir()
-	if err := setup(dir, project{Name: "myapp", Org: "TabelaDev", Categories: []string{"tui"}}); err != nil {
+	if err := setup(dir, project{Name: "myapp", Org: "TAbelhaDev", Categories: []string{"tui"}}); err != nil {
 		t.Fatal(err)
 	}
 	for _, rel := range []string{
@@ -156,7 +156,7 @@ func TestTuiCategoryWithoutGithub(t *testing.T) {
 
 func TestUpdateHeaderInsert(t *testing.T) {
 	readme := "# My Tool\n\nSome description.\n"
-	got := updateHeader(readme, project{Name: "my-tool", Org: "TabelaDev", Categories: []string{"github"}})
+	got := updateHeader(readme, project{Name: "my-tool", Org: "TAbelhaDev", Categories: []string{"github"}})
 	if !strings.HasPrefix(got, "<div align=\"center\">\n") {
 		t.Fatalf("header block should open the file:\n%s", got)
 	}
@@ -178,7 +178,7 @@ func TestUpdateHeaderInsert(t *testing.T) {
 
 func TestUpdateHeaderReplace(t *testing.T) {
 	readme := "# My Tool\n\n[![Go Version](https://img.shields.io/github/go-mod/go-version/ianptkcs/old?style=flat-square)](go.mod)\n[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/old)\n\nBody.\n"
-	got := updateHeader(readme, project{Name: "my-tool", Org: "TabelaDev", Categories: []string{"github"}})
+	got := updateHeader(readme, project{Name: "my-tool", Org: "TAbelhaDev", Categories: []string{"github"}})
 	if strings.Contains(got, "ianptkcs/old") {
 		t.Fatalf("old badge not replaced:\n%s", got)
 	}
@@ -192,7 +192,7 @@ func TestUpdateHeaderReplace(t *testing.T) {
 
 func TestUpdateHeaderPreservesTagline(t *testing.T) {
 	readme := "<div align=\"center\">\n\n# TabelaFin\n\n**Finanças pessoais — BYOK, sem assinatura.**\n\n[![SvelteKit](https://img.shields.io/badge/SvelteKit-Svelte-ff3e00?style=flat-square&logo=svelte&logoColor=white)](https://kit.svelte.dev)\n[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)\n\n[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)\n\n</div>\n\n---\n\n# Body Section\n"
-	got := updateHeader(readme, project{Name: "tabelafin", Org: "TabelaDev", Categories: []string{"web"}})
+	got := updateHeader(readme, project{Name: "tabelafin", Org: "TAbelhaDev", Categories: []string{"web"}})
 	if !strings.Contains(got, "**Finanças pessoais — BYOK, sem assinatura.**") {
 		t.Fatalf("tagline not preserved:\n%s", got)
 	}
@@ -205,8 +205,8 @@ func TestUpdateHeaderIdempotent(t *testing.T) {
 	// Canonical includes the language selector between tagline and badges.
 	// Badge order follows registry order (tui, web, github): tui's tech/theme
 	// badges first, then github's AGPL badge last, right before ko-fi.
-	src := "<div align=\"center\">\n\n# TabelaKanban\n\n**Kanban TUI sobre markdown.**\n\n**English** · [Português](README.pt-BR.md)\n\n[![Go Version](https://img.shields.io/github/go-mod/go-version/TabelaDev/tabelakanban?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)\n[![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)\n[![Powered by tabelatuiui](https://img.shields.io/badge/theme-tabelatuiui-d6b4f7?style=flat-square)](https://github.com/TabelaDev/tabelatuiui)\n[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)\n\n[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)\n\n</div>\n\n---\n\nBODY\n"
-	p := project{Name: "tabelakanban", Org: "TabelaDev", Categories: []string{"tui", "github"}}
+	src := "<div align=\"center\">\n\n# TabelaKanban\n\n**Kanban TUI sobre markdown.**\n\n**English** · [Português](README.pt-BR.md)\n\n[![Go Version](https://img.shields.io/github/go-mod/go-version/TAbelhaDev/tabelakanban?style=flat-square&logo=go&logoColor=white&color=00ADD8)](go.mod)\n[![Built with Bubble Tea](https://img.shields.io/badge/built%20with-Bubble%20Tea-ff69b4?style=flat-square)](https://github.com/charmbracelet/bubbletea)\n[![Powered by tabelhatuiui](https://img.shields.io/badge/theme-tabelhatuiui-d6b4f7?style=flat-square)](https://github.com/TAbelhaDev/tabelhatuiui)\n[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)\n\n[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ianptkcs)\n\n</div>\n\n---\n\nBODY\n"
+	p := project{Name: "tabelakanban", Org: "TAbelhaDev", Categories: []string{"tui", "github"}}
 	once := updateHeader(src, p)
 	if once != src {
 		t.Fatalf("canonical input changed:\n---want---\n%s\n---got---\n%s", src, once)
@@ -221,9 +221,9 @@ func TestUpdateHeaderPreservesPreamble(t *testing.T) {
 	// Anything above the centered block — an HTML comment, an anchor — used to
 	// be dropped, because the rebuilt output started at the header block and
 	// never re-attached lines[:start].
-	readme := "<!-- generated by tabelascaffold -->\n<a name=\"top\"></a>\n\n<div align=\"center\">\n\n# myapp\n\ntagline\n\n[![License: AGPL-3.0](https://img.shields.io/badge/x)](LICENSE)\n\n</div>\n\n---\n\n## Usage\nbody\n"
-	got := updateHeader(readme, project{Name: "myapp", Org: "TabelaDev", Categories: []string{"github"}})
-	if !strings.Contains(got, "generated by tabelascaffold") {
+	readme := "<!-- generated by tabelhascaffold -->\n<a name=\"top\"></a>\n\n<div align=\"center\">\n\n# myapp\n\ntagline\n\n[![License: AGPL-3.0](https://img.shields.io/badge/x)](LICENSE)\n\n</div>\n\n---\n\n## Usage\nbody\n"
+	got := updateHeader(readme, project{Name: "myapp", Org: "TAbelhaDev", Categories: []string{"github"}})
+	if !strings.Contains(got, "generated by tabelhascaffold") {
 		t.Fatalf("preamble comment lost:\n%s", got)
 	}
 	if !strings.Contains(got, "<a name=\"top\"></a>") {
@@ -239,7 +239,7 @@ func TestUpdateHeaderIgnoresBodyBadges(t *testing.T) {
 	// every section between the header and it was replaced by the canonical
 	// block. Here "## Usage" sits before a badge in "## Status".
 	readme := "<div align=\"center\">\n\n# myapp\n\ntagline\n\n[![License](https://img.shields.io/badge/x)](LICENSE)\n\n</div>\n\n---\n\n## Usage\nimportant body line\n\n## Status\n[![build](https://img.shields.io/badge/build-ok)](x)\n\n## End\nlast section\n"
-	got := updateHeader(readme, project{Name: "myapp", Org: "TabelaDev", Categories: []string{"github"}})
+	got := updateHeader(readme, project{Name: "myapp", Org: "TAbelhaDev", Categories: []string{"github"}})
 	for _, want := range []string{"## Usage", "important body line", "## Status", "build-ok", "## End", "last section"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("body content %q lost:\n%s", want, got)
@@ -279,7 +279,7 @@ func TestSetupRespectsIgnore(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := setup(dir, project{Name: "tabelakanban", Org: "TabelaDev", Categories: []string{"tui"}}); err != nil {
+	if err := setup(dir, project{Name: "tabelakanban", Org: "TAbelhaDev", Categories: []string{"tui"}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -305,7 +305,7 @@ func TestDoctorSkipsIgnored(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	p := project{Name: "tabelakanban", Org: "TabelaDev", Categories: []string{"tui"}}
+	p := project{Name: "tabelakanban", Org: "TAbelhaDev", Categories: []string{"tui"}}
 
 	before, _, err := doctor(dir, p)
 	if err != nil {
@@ -340,7 +340,7 @@ func hasDrift(ds []drift, path string) bool {
 }
 
 func TestHeaderBlockKoFiBelow(t *testing.T) {
-	block := headerBlock("My Tool", "", project{Name: "x", Org: "TabelaDev", Categories: []string{"github"}})
+	block := headerBlock("My Tool", "", project{Name: "x", Org: "TAbelhaDev", Categories: []string{"github"}})
 	lines := strings.Split(block, "\n")
 	lastNonEmpty := ""
 	for _, l := range lines {
@@ -379,7 +379,7 @@ func TestRenderReleaseWorkflow(t *testing.T) {
 
 func TestSetupWebCategory(t *testing.T) {
 	dir := t.TempDir()
-	if err := setup(dir, project{Name: "tabelafin", Org: "TabelaDev", Categories: []string{"web"}}); err != nil {
+	if err := setup(dir, project{Name: "tabelafin", Org: "TAbelhaDev", Categories: []string{"web"}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -402,15 +402,15 @@ func TestSetupWebCategory(t *testing.T) {
 }
 
 func TestWebCategoryBadgesAlone(t *testing.T) {
-	block := headerBlock("TabelaFin", "", project{Name: "tabelafin", Org: "TabelaDev", Categories: []string{"web"}})
+	block := headerBlock("TabelaFin", "", project{Name: "tabelafin", Org: "TAbelhaDev", Categories: []string{"web"}})
 	if !strings.Contains(block, "SvelteKit") {
 		t.Fatalf("missing SvelteKit badge:\n%s", block)
 	}
 	if !strings.Contains(block, "Cloudflare Workers") {
 		t.Fatalf("missing Cloudflare badge:\n%s", block)
 	}
-	if !strings.Contains(block, "tabelawebui") {
-		t.Fatalf("missing tabelawebui badge:\n%s", block)
+	if !strings.Contains(block, "tabelhawebui") {
+		t.Fatalf("missing tabelhawebui badge:\n%s", block)
 	}
 	if strings.Contains(block, "Bubble Tea") {
 		t.Fatalf("web badges must not contain Bubble Tea:\n%s", block)
@@ -426,7 +426,7 @@ func TestWebCategoryBadgesAlone(t *testing.T) {
 }
 
 func TestWebCategoryBadgesWithGithub(t *testing.T) {
-	block := headerBlock("TabelaFin", "", project{Name: "tabelafin", Org: "TabelaDev", Categories: []string{"web", "github"}})
+	block := headerBlock("TabelaFin", "", project{Name: "tabelafin", Org: "TAbelhaDev", Categories: []string{"web", "github"}})
 	if !strings.Contains(block, "AGPL") {
 		t.Fatalf("missing AGPL badge:\n%s", block)
 	}
@@ -462,7 +462,7 @@ func TestSetupPreservesExistingFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := setup(dir, project{Name: "myapp", Org: "TabelaDev", Categories: []string{"github", "tui"}}); err != nil {
+	if err := setup(dir, project{Name: "myapp", Org: "TAbelhaDev", Categories: []string{"github", "tui"}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -490,7 +490,7 @@ func TestSetupPreservesExistingFiles(t *testing.T) {
 // shape it started from. Without this, `doctor` reports drift on a repo `setup`
 // had only just written.
 func TestUpdateHeaderIdempotentFromAnyShape(t *testing.T) {
-	p := project{Name: "meuapp", Org: "TabelaDev", Categories: []string{"github"}}
+	p := project{Name: "meuapp", Org: "TAbelhaDev", Categories: []string{"github"}}
 	shapes := map[string]string{
 		"bare title":     "# meuapp\n\nDescrição do projeto.\n",
 		"title + body":   "# meuapp\n\nUma linha.\n\n## Uso\n\nfaz assim\n",
@@ -512,12 +512,12 @@ func TestUpdateHeaderIdempotentFromAnyShape(t *testing.T) {
 // The bilingual pair is the whole point of the language convention: each half
 // has to point at the other, and only at the other.
 func TestLangSwitchPointsAtTheOtherHalf(t *testing.T) {
-	en := headerBlock("MeuApp", "", project{Name: "meuapp", Org: "TabelaDev", Categories: []string{"github"}})
+	en := headerBlock("MeuApp", "", project{Name: "meuapp", Org: "TAbelhaDev", Categories: []string{"github"}})
 	if !strings.Contains(en, "**English** · [Português](README.pt-BR.md)") {
 		t.Fatalf("English header missing the selector:\n%s", en)
 	}
 
-	pt := headerBlock("MeuApp", "", project{Name: "meuapp", Org: "TabelaDev", Categories: []string{"github"}, Lang: langPtBR})
+	pt := headerBlock("MeuApp", "", project{Name: "meuapp", Org: "TAbelhaDev", Categories: []string{"github"}, Lang: langPtBR})
 	if !strings.Contains(pt, "[English](README.md) · **Português**") {
 		t.Fatalf("Portuguese header missing the selector:\n%s", pt)
 	}
@@ -531,8 +531,8 @@ func TestLangSwitchPointsAtTheOtherHalf(t *testing.T) {
 // back as "tagline" and the header accumulates a copy per run.
 func TestUpdateHeaderDoesNotDuplicateLangSwitch(t *testing.T) {
 	for _, p := range []project{
-		{Name: "meuapp", Org: "TabelaDev", Categories: []string{"github"}},
-		{Name: "meuapp", Org: "TabelaDev", Categories: []string{"github"}, Lang: langPtBR},
+		{Name: "meuapp", Org: "TAbelhaDev", Categories: []string{"github"}},
+		{Name: "meuapp", Org: "TAbelhaDev", Categories: []string{"github"}, Lang: langPtBR},
 	} {
 		src := "# MeuApp\n\nUma linha de tagline.\n\n## Uso\n\nfaz assim\n"
 		once := updateHeader(src, p)
@@ -553,7 +553,7 @@ func TestUpdateHeaderDoesNotDuplicateLangSwitch(t *testing.T) {
 // must agree on the stack-specific commands a contributor is told to run.
 func TestSetupWritesBilingualContributing(t *testing.T) {
 	dir := t.TempDir()
-	p := project{Name: "meuapp", Org: "TabelaDev", Categories: []string{"web", "github"}}
+	p := project{Name: "meuapp", Org: "TAbelhaDev", Categories: []string{"web", "github"}}
 	if err := setup(dir, p); err != nil {
 		t.Fatal(err)
 	}
@@ -587,7 +587,7 @@ func TestSetupWritesBilingualContributing(t *testing.T) {
 // doctor is how a repo learns it is missing its Portuguese half.
 func TestDoctorReportsMissingBilingualHalves(t *testing.T) {
 	dir := t.TempDir()
-	p := project{Name: "meuapp", Org: "TabelaDev", Categories: []string{"github"}}
+	p := project{Name: "meuapp", Org: "TAbelhaDev", Categories: []string{"github"}}
 	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("# MeuApp\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
